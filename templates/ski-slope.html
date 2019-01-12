@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ski Slope Least Squares</title>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='ski-slope.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon-32x32.png') }}" sizes="32x32" />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon-16x16.png') }}" sizes="16x16" />
+    <script
+        src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+        crossorigin="anonymous"></script>
+    <script
+        src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"
+        integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E="
+        crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='ski-slope.js') }}"></script>
+</head>
+<body>
+    <div class="ui-widget" id="main">
+        <h1>Ski Slope Least Squares</h1>
+        <form id="spreadsheet_upload" action="{{ url_for('ski_slope') }}" method="post" enctype="multipart/form-data">
+            <div>
+                <div>Select measurement data</div>
+                <div><input class="ui-button ui-widget ui-corner-all" type="file" name="spreadsheet"/></div>
+            </div>
+            <div>
+                <div>Initial guess for independent variables</div>
+                <div>
+                    <label>h: <input type="text" size="5" name="h" value="700"/></label>
+                    <label>b: <input type="text" size="5" name="b" value="200"/></label>
+                    <label>v: <input type="text" size="5" name="v" value="0"/></label>
+                    <label>p: <input type="text" size="5" name="p" value="24"/></label>
+                </div>
+            </div>
+            <div>
+                <div>
+                    <input class="ui-checkbox ui-widget ui-corner-all" id="specify_bounds" name="specify_bounds" type="checkbox" value="specify_bounds" />
+                    <label for="specify_bounds">Specify upper and lower bounds</label>
+                </div>
+                <div id="bounds">
+                    <div id="bounds_overlay"></div>
+                    <div>
+                        <label>h: <input type="text" size="5" name="h_upper" value="inf"/></label>
+                        <label>b: <input type="text" size="5" name="b_upper" value="inf"/></label>
+                        <label>v: <input type="text" size="5" name="v_upper" value="inf"/></label>
+                        <label>p: <input type="text" size="5" name="p_upper" value="inf"/></label>
+                        <span>(upper, inclusive)</span>
+                    </div>
+                    <div>
+                        <label>h: <input type="text" size="5" name="h_lower" value="-inf"/></label>
+                        <label>b: <input type="text" size="5" name="b_lower" value="-inf"/></label>
+                        <label>v: <input type="text" size="5" name="v_lower" value="-inf"/></label>
+                        <label>p: <input type="text" size="5" name="p_lower" value="-inf"/></label>
+                        <span>(lower, inclusive)</span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div>Maximum number of function evaluations</div>
+                <div><input type="text" size="20" name="max_nfev" value="1000000000"/></div>
+            </div>
+            <div>
+                <input class="ui-checkbox ui-widget ui-corner-all" id="include_text" name="include_text" type="checkbox" value="include_text" checked="true"/>
+                <label for="include_text">Include all calculated values in the output image</label>
+            </div>
+            <div>
+                <button class="ui-button ui-widget ui-corner-all" type="submit" value="Upload">
+                    <span class="ui-icon ui-icon-gear"></span> Do Curve Fit
+                </button>
+                <img id="spinner" src="{{ url_for('static', filename='spinner.gif') }}" />
+            </div>
+        </form>
+        <p id="error_log"></p>
+        <div id="image_container"></div>
+        <div id="calc_results_container"></div>
+    </div>
+</body>
+</html>
