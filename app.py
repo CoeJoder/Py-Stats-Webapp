@@ -1,5 +1,5 @@
 from flask import Flask, url_for, request, redirect, render_template, jsonify, send_file
-from werkzeug.exceptions import BadRequest, InternalServerError, HttpException
+from werkzeug.exceptions import BadRequest, InternalServerError, HTTPException
 from xlrd import open_workbook
 import numpy as np
 from fastnumbers import fast_real
@@ -108,7 +108,7 @@ def ski_slope():
             print "[LeastSquaresException] {0}".format(str(err))
             raise InternalServerError(str(err))
 
-        except HttpException as err:
+        except HTTPException as err:
             print "[{0}] {1}".format(type(err).__name__, str(err))
             raise err
 
