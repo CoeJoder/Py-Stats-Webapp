@@ -52,12 +52,7 @@ def handle_invalid_usage(error):
     return error.description, error.code
 
 
-@app.route("/")
-def root():
-    return redirect(url_for("ski_slope"))
-
-
-@app.route("/ski-slope", methods=["GET", "POST"])
+@app.route("/", methods=["GET", "POST"])
 def ski_slope():
     if request.method == "GET":
         # serve HTML form
