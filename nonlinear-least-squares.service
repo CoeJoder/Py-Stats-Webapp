@@ -1,0 +1,19 @@
+# Systemd unit file for managing the app's lifecycle
+[Unit]
+Description = Nonlinear Least Squares webapp
+After = network.target
+
+[Service]
+PermissionsStartOnly = true
+PIDFile = /run/gunicorn/nonlinear-least-squares.pid
+User = www-data
+Group = www-data
+RuntimeDirectory = gunicorn
+WorkingDirectory = /var/www/Nonlinear-Least-Squares
+ExecStart = /var/www/Nonlinear-Least-Squares/venv/bin/gunicorn -b 0.0.0.0:8000 -p /run/gunicorn/nonlinear-least-squares.pid app:app
+ExecReload = /bin/kill -s HUP $MAINPID
+ExecStop = /bin/kill -s TERM $MAINPID
+PrivateTmp = true
+
+[Install]
+WantedBy = multi-user.target
