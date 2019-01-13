@@ -27,7 +27,7 @@ jQuery(document).ready(function($) {
             processData: false,
             xhr: function() {
                 var xhr = $.ajaxSettings.xhr();
-                xhr.responseType = "text";  // Flask will effectively change this to `json` in the exception handler
+                xhr.responseType = "text";
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState == 2) {
                         if (xhr.status == 200) {
