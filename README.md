@@ -45,7 +45,7 @@ sudo systemctl stop nonlinear-least-squares.service
 sudo systemctl restart nonlinear-least-squares.service
 
 # Check status
-sudo systemctl restart nonlinear-least-squares.service
+sudo systemctl status nonlinear-least-squares.service
 ```
 
 ## Authors:
