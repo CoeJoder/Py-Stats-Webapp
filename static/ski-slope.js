@@ -1,5 +1,10 @@
-jQuery(document).ready(function($) {
+jQuery(function($) {
     var UNKNOWN_ERROR = "An unknown exception occurred during processing.";
+
+    // uncomment to render curve equation dynamically
+//    katex.render("y = h \\cdot \\cos \\left({{2\\pi(x + v) \\over p }}\\right) + b", document.getElementById("curve_equation"), {
+//        throwOnError: false
+//    });
 
     // toggle the bounds section using a checkbox
     $("#specify_bounds").change(function() {
