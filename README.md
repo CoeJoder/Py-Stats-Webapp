@@ -19,7 +19,7 @@ sudo groupadd www-data
 sudo useradd -d /var/www -g www-data -s /usr/sbin/nologin www-data
 sudo chgrp www-data /var/www
 sudo chmod 775 /var/www
-sudo usermod -a -G www-data $USER
+sudo gpasswd --add $USER www-data
 su - $USER
 
 # Installation
@@ -48,6 +48,6 @@ sudo systemctl restart nonlinear-least-squares.service
 sudo systemctl status nonlinear-least-squares.service
 ```
 
-## Authors:
+## Authors
 Evan Raiewski  
 Joe Nasca
