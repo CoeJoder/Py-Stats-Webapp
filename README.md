@@ -5,7 +5,7 @@ Written in Python, using the Flask framework.
 ![Sample image](/sample_output.png "Sample output")
 
 ## Deployment (Ubuntu 18.04 + [Gunicorn](https://gunicorn.org/))
-This is just one way to deploy the application; adjust as necessary.  The webapp will start automatically on boot with this configuration.
+This is just one way to deploy the application; adjust as necessary.  The webapp will start on boot, listening on port 8000.
 ```shell
 # System setup
 sudo apt install git
@@ -18,7 +18,7 @@ sudo mkdir /var/www
 sudo groupadd www-data
 sudo useradd -d /var/www -g www-data -s /usr/sbin/nologin www-data
 sudo chgrp www-data /var/www
-sudo chmod 775 /var/www
+sudo chmod 2770 /var/www
 sudo gpasswd --add $USER www-data
 su - $USER
 
@@ -27,14 +27,12 @@ cd /var/www
 git clone https://github.com/CoeJoder/Nonlinear-Least-Squares.git
 cd Nonlinear-Least-Squares
 virtualenv venv
-source ./venv/bin/activate
-pip install -r requirements.txt
+./venv/bin/pip install -r requirements.txt
 sudo ln -s /var/www/Nonlinear-Least-Squares/nonlinear-least-squares.service /etc/systemd/system/nonlinear-least-squares.service
-sudo chmod 755 nonlinear-least-squares.service
 sudo systemctl daemon-reload
 ```
 ## Management 
-```
+```shell
 # Startup
 sudo systemctl start nonlinear-least-squares.service
 

@@ -25,7 +25,7 @@ class LeastSquaresException(Exception):
     pass
 
 
-def parse_workbook(workbook):
+def parse_workbook(workbook, use_arrays=True):
     sheet = workbook.sheet_by_index(0)
 
     # create blank lists to store excel columns
@@ -36,6 +36,10 @@ def parse_workbook(workbook):
     for row in range(sheet.nrows):
         time.append(sheet.cell_value(row, 0))
         data.append(sheet.cell_value(row, 1))
+
+    # caller may need regular list, as NumPy arrays are not JSON serializable
+    if not use_arrays:
+        return time, data
 
     # convert the lists to NumPy arrays, which are much faster, and can be
     # passed as parameters to NumPy/SciPy matrix functions
@@ -346,7 +350,7 @@ def generate_plot_image(time, data, results, include_text=True):
     axes = fig.add_subplot(211 if include_text else 111)
 
     # generate smooth fitted curves by upping the resolution to 100
-    time_fit = np.linspace(time.min(), time.max(), 100)
+    time_fit = np.linspace(time.min(), time.max(), 500)
     lsq_data_fit = cos_fit(results.lsq_params, time_fit)
     acro_x_y = (results.lsq_acro, results.lsq_peak_value)
     # plot the data ("ro" = red circles) and the fit ("r-" = red line)

@@ -20,11 +20,10 @@
             src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"
             integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E="
             crossorigin="anonymous"></script>
-    <!-- uncomment to render curve equation dynamically -->
-    <!--script defer
+    <script
             src="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/katex.js"
             integrity="sha384-UP7zD+aGyuDvxWQEDSRYcvoTxJSD82C6VvuEBktJZGo25CVhDstY9sCDHvyceo9L"
-            crossorigin="anonymous"></script-->
+            crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='ski-slope.js') }}"></script>
 </head>
 <body>
@@ -36,12 +35,7 @@
                 <div><input class="ui-button ui-widget ui-corner-all" type="file" name="spreadsheet"/></div>
             </div>
             <div>
-                <div id="curve_equation">
-                    {% raw %}
-                    <!-- generated from kratex.js -->
-                    <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>y</mi><mo>=</mo><mi>h</mi><mo>⋅</mo><mi>cos</mi><mo>⁡</mo><mrow><mo fence="true">(</mo><mfrac><mrow><mn>2</mn><mi>π</mi><mo>(</mo><mi>x</mi><mo>+</mo><mi>v</mi><mo>)</mo></mrow><mi>p</mi></mfrac><mo fence="true">)</mo></mrow><mo>+</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">y = h \cdot \cos \left({{2\pi(x + v) \over p }}\right) + b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.625em; vertical-align: -0.19444em;"></span><span style="margin-right: 0.03588em;" class="mord mathdefault">y</span><span class="mspace" style="margin-right: 0.277778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.277778em;"></span></span><span class="base"><span class="strut" style="height: 0.69444em; vertical-align: 0em;"></span><span class="mord mathdefault">h</span><span class="mspace" style="margin-right: 0.222222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right: 0.222222em;"></span></span><span class="base"><span class="strut" style="height: 1.80002em; vertical-align: -0.65002em;"></span><span class="mop">cos</span><span class="mspace" style="margin-right: 0.166667em;"></span><span class="minner"><span class="mopen delimcenter" style="top: 0em;"><span class="delimsizing size2">(</span></span><span class="mord"><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 1.01em;"><span class="" style="top: -2.655em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">p</span></span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line" style="border-bottom-width: 0.04em;"></span></span><span class="" style="top: -3.485em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span><span style="margin-right: 0.03588em;" class="mord mathdefault mtight">π</span><span class="mopen mtight">(</span><span class="mord mathdefault mtight">x</span><span class="mbin mtight">+</span><span style="margin-right: 0.03588em;" class="mord mathdefault mtight">v</span><span class="mclose mtight">)</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.481108em;"><span class=""></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span><span class="mclose delimcenter" style="top: 0em;"><span class="delimsizing size2">)</span></span></span><span class="mspace" style="margin-right: 0.222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.222222em;"></span></span><span class="base"><span class="strut" style="height: 0.69444em; vertical-align: 0em;"></span><span class="mord mathdefault">b</span></span></span></span>
-                    {% endraw %}
-                </div>
+                <div id="curve_equation"></div>
             </div>
             <div>
                 <div>Initial guess for independent variables</div>
@@ -94,5 +88,13 @@
         <div id="image_container"></div>
         <div id="calc_results_container"></div>
     </div>
+    <!-- render immediately -->
+    <script>
+        {% raw %}
+        katex.render("y = h \\cdot \\cos \\left({{2(x + v)\\pi \\over p }}\\right) + b", document.getElementById("curve_equation"), {
+            throwOnError: false
+        });
+        {% endraw %}
+    </script>
 </body>
 </html>
