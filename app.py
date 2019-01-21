@@ -32,24 +32,96 @@ def get_uploaded_spreadsheet():
 
 def get_numpy_val_from_form_input(input_name):
     """Convert form inputs to NumPy-compatible numerical values"""
-    val = request.form[input_name]
-    if val == "inf" or val == "+inf":
+    return get_numpy_val(input_name, request.form[input_name])
+
+
+def get_numpy_val(input_name, input_val):
+    if input_val == "inf" or input_val == "+inf":
         return np.inf
-    elif val == "-inf":
+    elif input_val == "-inf":
         return -np.inf
     else:
-        num = fast_real(val)
+        num = fast_real(input_val)
         if isinstance(num, (int, long, float)):
             return num
         else:
             raise BadRequest(
-                "Invalid value for \"{0}\".  Expected: -inf, inf, or a numerical value.".format(input_name))
+                "Invalid value for \"{0}\" ({1}).  Expected: -inf, inf, or a numerical value.".format(input_name, input_val))
 
 
 @app.errorhandler(BadRequest)
 @app.errorhandler(InternalServerError)
 def handle_invalid_usage(error):
     return error.description, error.code
+
+
+@app.route("/desmos")
+def desmos_graph():
+    return render_template("desmos-graph.html")
+
+
+@app.route("/parseSpreadsheet", methods=["POST"])
+def parse_uploaded_spreadsheet():
+    # spreadsheet submitted for parsing only
+    file_stream = get_uploaded_spreadsheet()
+    time, data = parse_workbook(open_workbook(file_contents=file_stream.read()), use_arrays=False)
+    return jsonify(x=time, y=data)
+
+
+@app.route("/desmosCalculateRegression", methods=["POST"])
+def desmos_calculate_regression():
+    try:
+        # parse the form inputs
+        time = [get_numpy_val("x["+str(i)+"]", listVal) for i, listVal in enumerate(request.form.getlist("x[]"))]
+        data = [get_numpy_val("y["+str(i)+"]", listVal) for i, listVal in enumerate(request.form.getlist("y[]"))]
+        time = np.array(time)
+        data = np.array(data)
+
+        h = get_numpy_val_from_form_input("h")
+        b = get_numpy_val_from_form_input("b")
+        v = get_numpy_val_from_form_input("v")
+        p = get_numpy_val_from_form_input("p")
+        max_nfev = get_numpy_val_from_form_input("max_nfev")
+
+        if request.form.get("specify_bounds"):
+            # bounds were specified
+            h_upper = get_numpy_val_from_form_input("h_upper")
+            b_upper = get_numpy_val_from_form_input("b_upper")
+            v_upper = get_numpy_val_from_form_input("v_upper")
+            p_upper = get_numpy_val_from_form_input("p_upper")
+
+            h_lower = get_numpy_val_from_form_input("h_lower")
+            b_lower = get_numpy_val_from_form_input("b_lower")
+            v_lower = get_numpy_val_from_form_input("v_lower")
+            p_lower = get_numpy_val_from_form_input("p_lower")
+            bounds = ([h_lower, b_lower, v_lower, p_lower], [h_upper, b_upper, v_upper, p_upper])
+
+            # run calculation with bounds
+            results = do_calculations(time=time, data=data, params_guess=(h, b, v, p), bounds=bounds, max_nfev=max_nfev)
+        else:
+            # run calculation without bounds
+            results = do_calculations(time=time, data=data, params_guess=(h, b, v, p), max_nfev=max_nfev)
+
+        # for now, the Desmos-style page expects just the param solutions
+        h, b, v, p = results.lsq_params
+        return jsonify(h=h, b=b, v=v, p=p)
+
+    except KeyError as err:
+        err_msg = "Request was missing param \"{0}\"".format(err.args[0])
+        print "[KeyError] {0}".format(err_msg)
+        raise BadRequest(err_msg)
+
+    except LeastSquaresException as err:
+        print "[LeastSquaresException] {0}".format(str(err))
+        raise InternalServerError(str(err))
+
+    except HTTPException as err:
+        print "[{0}] {1}".format(type(err).__name__, str(err))
+        raise err
+
+    except Exception as err:
+        print "[{0}] {1}".format(type(err).__name__, str(err))
+        raise InternalServerError(str(err))
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -74,14 +146,15 @@ def ski_slope():
 
             if request.form.get("specify_bounds"):
                 # bounds were specified
-                h_upper = request.form["h_upper"]
-                b_upper = request.form["b_upper"]
-                v_upper = request.form["v_upper"]
-                p_upper = request.form["p_upper"]
-                h_lower = request.form["h_lower"]
-                b_lower = request.form["b_lower"]
-                v_lower = request.form["v_lower"]
-                p_lower = request.form["p_lower"]
+                h_upper = get_numpy_val_from_form_input("h_upper")
+                b_upper = get_numpy_val_from_form_input("b_upper")
+                v_upper = get_numpy_val_from_form_input("v_upper")
+                p_upper = get_numpy_val_from_form_input("p_upper")
+
+                h_lower = get_numpy_val_from_form_input("h_lower")
+                b_lower = get_numpy_val_from_form_input("b_lower")
+                v_lower = get_numpy_val_from_form_input("v_lower")
+                p_lower = get_numpy_val_from_form_input("p_lower")
                 bounds = ([h_lower, b_lower, v_lower, p_lower], [h_upper, b_upper, v_upper, p_upper])
 
                 # run calculation with bounds
