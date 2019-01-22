@@ -1,18 +1,25 @@
-var RUN_BUTTON_URL = "/desmosCalculateRegression";
-var IMPORT_BUTTON_URL = "/parseSpreadsheet";
-var UNKNOWN_ERROR = "An unknown exception occurred during processing.";
-var X_AXIS_LEFT = -10;
-var MIN_X_AXIS_RIGHT = 85;
-var DEFAULT_LOWER_BOUND = -10;
-
-var calcElm = document.getElementById("calculator");
-var calculator = Desmos.GraphingCalculator(calcElm, {border: false});
 
 /////////////TODO
-/////////////-implement proper error handling for import and calculate functions
 /////////////-move import button into the regression panel
-
+/////////////-add mesor and other curves to the Desmos graph
+/////////////-add a legend
 (function($) {
+
+    var X_AXIS_LEFT = -10;
+    var MIN_X_AXIS_RIGHT = 85;
+    var DEFAULT_LOWER_BOUND = -10;
+    var RUN_BUTTON_URL = "/desmosCalculateRegression";
+    var IMPORT_BUTTON_URL = "/parseSpreadsheet";
+    var DEFAULT_ERROR_MESSAGE = "An unknown exception occurred during processing.";
+    var DEFAULT_SERVER_ERROR_STATUS = "SERVER ERROR";
+    var DEFAULT_ERROR_STATUS = "ERROR";
+
+    if (typeof window.SkiSlope == "undefined") {
+        alert("Module was not initialized (desmos-initial-state.js).");
+        return;
+    }
+    var calculator = Desmos.GraphingCalculator(document.getElementById("calculator"), {border: false});
+    window.SkiSlope.calculator = calculator;
 
     // scales the graph according to the imported measurements
     function scaleGraph(x, y) {
@@ -28,7 +35,7 @@ var calculator = Desmos.GraphingCalculator(calcElm, {border: false});
     // populates the expression list
     function initializeExpressions() {
         // restore a previously saved state
-        calculator.setState(SkiSlope__initialGraphState);
+        calculator.setState(SkiSlope.initialGraphState);
 
         var params = {};
 
@@ -66,7 +73,7 @@ var calculator = Desmos.GraphingCalculator(calcElm, {border: false});
         return params;
 
         // unfortunately, the below method does not allow adding of notes. Commenting out but retaining
-        // since it is useful if the expression list must be rebuilt from scratch.
+        // since it is useful in case the expression list must be rebuilt from scratch.
         /*
         calculator.setExpressions([
             {id: "func", latex: "y_1\\sim h\\cdot\\cos\\left(\\frac{2\\left(x_1+v\\right)\\pi}{p}\\right)+b"}
@@ -119,7 +126,7 @@ var calculator = Desmos.GraphingCalculator(calcElm, {border: false});
     $("#calculate_button_row").appendTo(".dcg-expression-top-bar .dcg-right-buttons").show();
 
     // move the regression options panel into place
-    $("#regression_options").prependTo(".dcg-disable-horizontal-scroll-to-cursor");
+    $("#regression_options").prependTo(".dcg-exppanel");
 
     // handle checkbox interactions in the regression options panel
     $("#regression_options").on("click mouseenter mouseleave", ".dcg-component-checkbox", function(e) {
@@ -162,27 +169,33 @@ var calculator = Desmos.GraphingCalculator(calcElm, {border: false});
                 dataType: "json",
                 success: function(response, textStatus, jqXHR) {
                     if (!response) {
-                        displayError("Unable to parse spreadsheet; server response was empty.");
-                    }
-                    else if (response.hasOwnProperty("message")) {
-                        displayError(response.message || UNKNOWN_ERROR);
+                        displayError("Import failed; server response was empty!");
                     }
                     else if (response.hasOwnProperty("x") && response.hasOwnProperty("y")) {
                         // add the parsed spreadsheet values as an expression table
                         importData(response.x, response.y);
                     }
                     else {
-                        displayError("Failed to parse values from the spreadsheet.");
+                        displayError("Import failed; server response was missing data!");
                     }
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     console.log(jqXHR);
-                    console.error(textStatus, errorThrown)
-                    if (typeof jqXHR.responseText != "undefined") {
-                        displayError(jqXHR.responseText, errorThrown);
+                    console.log(textStatus, errorThrown)
+                    var responseText = jqXHR.responseText;
+                    if (jqXHR.hasOwnProperty("responseJSON")) {
+                        displayCaughtException(jqXHR.responseJSON);
+                    }
+                    else if (typeof responseText != "undefined") {
+                        if (isHtml(responseText)) {
+                            displayUncaughtException(responseText, errorThrown);
+                        }
+                        else {
+                            displayError(responseText);
+                        }
                     }
                     else {
-                        displayError(UNKNOWN_ERROR);
+                        displayError(DEFAULT_ERROR_MESSAGE);
                     }
                 },
                 beforeSend: function() {
@@ -249,21 +262,27 @@ var calculator = Desmos.GraphingCalculator(calcElm, {border: false});
                     if (!response) {
                         displayError("Server response was empty.");
                     }
-                    else if (response.hasOwnProperty("message")) {
-                        displayError(response.message || UNKNOWN_ERROR);
-                    }
                     else {
                         displayRegressionResults(response);
                     }
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     console.log(jqXHR);
-                    console.error(textStatus, errorThrown)
-                    if (typeof jqXHR.responseText != "undefined") {
-                        displayError(jqXHR.responseText, errorThrown);
+                    console.log(textStatus, errorThrown)
+                    var responseText = jqXHR.responseText;
+                    if (jqXHR.hasOwnProperty("responseJSON")) {
+                        displayCaughtException(jqXHR.responseJSON);
+                    }
+                    else if (typeof responseText != "undefined") {
+                        if (isHtml(responseText)) {
+                            displayUncaughtException(responseText, errorThrown);
+                        }
+                        else {
+                            displayError(responseText);
+                        }
                     }
                     else {
-                        displayError(UNKNOWN_ERROR);
+                        displayError(DEFAULT_ERROR_MESSAGE);
                     }
                 },
                 beforeSend: function() {
@@ -277,21 +296,25 @@ var calculator = Desmos.GraphingCalculator(calcElm, {border: false});
     });
 
     function validateParamsBeforeRun() {
-        // just need to validate the imported data since sliders start with values
-        valid = true;
-        if (!params.hasOwnProperty("x1")) {
+        // just need to validate the imported data since param sliders start with values
+        var valid = true;
+        var missingCols = [];
+        if (!params.hasOwnProperty("x1") || typeof params.x1 == "undefined") {
             valid = false;
-            displayError("No imported time points found (x1 column missing).");
+            missingCols.push("x1");
         }
-        if (!params.hasOwnProperty("y1")) {
+        if (!params.hasOwnProperty("y1") || typeof params.y1 == "undefined") {
             valid = false;
-            displayError("No imported data points found (y1 column missing).");
+            missingCols.push("y1");
+        }
+        if (!valid) {
+            displayError("Imported data not found ("+missingCols.join(", ")+" column"+(missingCols.length > 1 ? "s" : "")+" missing).");
         }
         return valid;
     }
 
     function displayRegressionResults(response) {
-        var errStr = "";
+        var missingParams = [];
         var exprList = [];
         var paramNames = ["h", "b", "v", "p"];
         for (var i=0; i<paramNames.length; i++) {
@@ -305,54 +328,97 @@ var calculator = Desmos.GraphingCalculator(calcElm, {border: false});
                 });
             }
             else {
-                errStr += "Server response was missing param: "+ paramName +"\n";
+                missingParams.push(paramName);
             }
         }
         // if no response params were missing, update the slider values
-        if (errStr == "") {
+        if (missingParams.length == 0) {
             for (var i=0; i<exprList.length; i++) {
                 calculator.setExpression(exprList[i]);
             }
         }
         else {
-            displayError(errStr);
+            displayError("Server response was missing params: " + missingParams.join(", "));
         }
     }
 
-    function getSafeInt(str, defaultVal) {
-        var parsed = parseInt(str);
-        if (isNaN(parsed)) {
-            console.error("parseInt() return NaN: " + str);
-            return defaultVal;
+    function displayCaughtException(response) {
+        var msg = response.description || DEFAULT_ERROR_MESSAGE;
+        var status = response.name || DEFAULT_SERVER_ERROR_STATUS;
+        if (response.hasOwnProperty("code")) {
+            status += " ("+response.code+")";
         }
-        return parsed;
+        displayError(msg, status);
     }
 
-    function getExpressionWithId(id) {
-        var exprList = calculator.getExpressions();
-        for (var i=0; i<exprList.length; i++) {
-            var expr = exprList[i];
-            if (expr.id == id)
-                return expr;
-        }
-        return null;
+    function isHtml(str) {
+        var doc = new DOMParser().parseFromString(str, "text/html");
+        return Array.from(doc.body.childNodes).some(function(node) {
+            return node.nodeType == 1;
+        });
+    }
+
+    function displayUncaughtException(html, textStatus) {
+        var $dialog = createErrorDialog();
+        var $iframe = $("<iframe></iframe>").appendTo($dialog);
+        var iframe = $iframe.get(0);
+        iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument);
+        iframe.document.open();
+        iframe.document.write(html);
+        iframe.document.close();
+
+        $dialog.dialog("option", "title", '<span class="ui-icon ui-icon-alert"></span><span>'+textStatus+'</span>');
+        $dialog.dialog("option", "width", 1000);
+        $dialog.dialog("option", "height", 650);
+        $dialog.dialog("open");
     }
 
     function displayError(str, textStatus = "ERROR") {
-        console.error("Error: "+str);
-//        $("#error_log").append("<span style='padding-right: 10px;'>[" + textStatus +"]</span> " + str).fadeIn(150);
+        var $dialog = createErrorDialog();
+        $dialog.html("<p>"+str+"</p>");
+        $dialog.dialog("option", "title", '<span class="ui-icon ui-icon-alert"></span><span>'+textStatus+'</span>');
+        $dialog.dialog("option", "width", 375);
+        $dialog.dialog("open");
+    }
+
+    function createErrorDialog() {
+        var $dialog = $("#error_dialog").dialog({
+            autoOpen: false,
+            width: "auto",
+            height: "auto",
+            maxHeight: 650,
+            maxWidth: 1200,
+            appendTo: "#error_dialog_container",
+            position: {
+                my: "left top-100",
+                at: "left+50 middle",
+                of: ".dcg-exp-list-resizer",
+                within: ".dcg-grapher"
+            },
+            classes: {
+                "ui-dialog": "dcg-popover-interior",
+                "ui-dialog-titlebar": "ui-corner-all ui-state-error",
+            },
+            buttons: {
+                "OK": function() {
+                    $dialog.dialog("close");
+                }
+            },
+            close: function() {
+                $dialog.dialog("destroy");
+                $dialog.empty();
+            }
+        });
+        $dialog.data("uiDialog")._title = function(title) {
+            title.html(this.options.title);
+        };
+        return $dialog;
     }
 
     function clearError() {
-//        $("#error_log").empty().css("display", "none");
-    }
-
-    function displayImage(src) {
-//        $("<img/>").attr("src", src).appendTo("#image_container").parent().fadeIn();
-    }
-
-    function clearImage() {
-//        $("#image_container").empty().css("display", "none");
+        var $diag = $("#error_dialog").dialog("instance");
+        if ($diag)
+            $diag.close();
     }
 
 })(jQuery);
