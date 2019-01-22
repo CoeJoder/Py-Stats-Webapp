@@ -1,7 +1,9 @@
+
 ////////////TODO
 ////////////-ensure that initial guess is within bounds if specified
 jQuery(function($) {
-    var UNKNOWN_ERROR = "An unknown exception occurred during processing.";
+    var DEFAULT_ERROR_MESSAGE = "An unknown exception occurred during processing.";
+    var DEFAULT_SERVER_ERROR_STATUS = "SERVER ERROR";
 
     // toggle the bounds section using a checkbox
     $("#specify_bounds").change(function() {
@@ -44,9 +46,6 @@ jQuery(function($) {
                 if (!response) {
                     displayError("Expected an image, but the server response was empty.");
                 }
-                else if (response.hasOwnProperty("message")) {
-                    displayError(response.message || UNKNOWN_ERROR);
-                }
                 else {
                     // generate a local URL for the received image blob
                     var url = window.URL || window.webkitURL;
@@ -56,12 +55,21 @@ jQuery(function($) {
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 console.log(jqXHR);
-                console.error(textStatus, errorThrown)
-                if (typeof jqXHR.responseText != "undefined") {
-                    displayError(jqXHR.responseText, errorThrown);
+                console.log(textStatus, errorThrown)
+                var responseText = jqXHR.responseText;
+                if (jqXHR.hasOwnProperty("responseJSON")) {
+                    displayCaughtException(jqXHR.responseJSON);
+                }
+                else if (typeof responseText != "undefined") {
+                    if (isHtml(responseText)) {
+                        displayUncaughtException(responseText, errorThrown);
+                    }
+                    else {
+                        displayError(responseText);
+                    }
                 }
                 else {
-                    displayError(UNKNOWN_ERROR);
+                    displayError(DEFAULT_ERROR_MESSAGE);
                 }
             },
             beforeSend: function() {
@@ -76,6 +84,33 @@ jQuery(function($) {
 
     function displayError(str, textStatus = "ERROR") {
         $("#error_log").append("<span style='padding-right: 10px;'>[" + textStatus +"]</span> " + str).fadeIn(150);
+    }
+
+    function isHtml(str) {
+        var doc = new DOMParser().parseFromString(str, "text/html");
+        return Array.from(doc.body.childNodes).some(function(node) {
+            return node.nodeType == 1;
+        });
+    }
+
+    function displayCaughtException(responseJSON) {
+        var msg = responseJSON.description || DEFAULT_ERROR_MESSAGE;
+        var status = responseJSON.name || DEFAULT_SERVER_ERROR_STATUS;
+        if (responseJSON.hasOwnProperty("code")) {
+            status += " ("+responseJSON.code+")";
+        }
+        displayError(msg, status);
+    }
+
+    function displayUncaughtException(html, textStatus) {
+        var $errorLog = $("#error_log");
+        var $iframe = $('<iframe></iframe>').appendTo($errorLog);
+        var iframe = $iframe.get(0);
+        iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument);
+        iframe.document.open();
+        iframe.document.write(html);
+        iframe.document.close();
+        $errorLog.fadeIn(150);
     }
 
     function clearError() {

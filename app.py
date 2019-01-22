@@ -31,11 +31,12 @@ def get_uploaded_spreadsheet():
 
 
 def get_numpy_val_from_form_input(input_name):
-    """Convert form inputs to NumPy-compatible numerical values"""
+    """Get a NumPy-compatible numerical value from the request object"""
     return get_numpy_val(input_name, request.form[input_name])
 
 
 def get_numpy_val(input_name, input_val):
+    """Convert input values to NumPy-compatible numerical values"""
     if input_val == "inf" or input_val == "+inf":
         return np.inf
     elif input_val == "-inf":
@@ -49,10 +50,16 @@ def get_numpy_val(input_name, input_val):
                 "Invalid value for \"{0}\" ({1}).  Expected: -inf, inf, or a numerical value.".format(input_name, input_val))
 
 
-@app.errorhandler(BadRequest)
-@app.errorhandler(InternalServerError)
-def handle_invalid_usage(error):
-    return error.description, error.code
+@app.errorhandler(HTTPException)
+def handle_httpexception(error):
+    print str(error)
+    return jsonify(code=error.code, name=error.name, description=error.description), error.code
+
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    print str(error)
+    return jsonify(code=500, description=error.message), 500
 
 
 @app.route("/desmos")
@@ -107,21 +114,10 @@ def desmos_calculate_regression():
         return jsonify(h=h, b=b, v=v, p=p)
 
     except KeyError as err:
-        err_msg = "Request was missing param \"{0}\"".format(err.args[0])
-        print "[KeyError] {0}".format(err_msg)
-        raise BadRequest(err_msg)
-
-    except LeastSquaresException as err:
-        print "[LeastSquaresException] {0}".format(str(err))
-        raise InternalServerError(str(err))
-
-    except HTTPException as err:
-        print "[{0}] {1}".format(type(err).__name__, str(err))
-        raise err
+        raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
 
     except Exception as err:
-        print "[{0}] {1}".format(type(err).__name__, str(err))
-        raise InternalServerError(str(err))
+        raise InternalServerError("[{0}] {1}".format(type(err).__name__, str(err)))
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -168,19 +164,8 @@ def ski_slope():
             return send_file(buf, mimetype="image/png")
 
         except KeyError as err:
-            err_msg = "Request was missing param \"{0}\"".format(err.args[0])
-            print "[KeyError] {0}".format(err_msg)
-            raise BadRequest(err_msg)
-
-        except LeastSquaresException as err:
-            print "[LeastSquaresException] {0}".format(str(err))
-            raise InternalServerError(str(err))
-
-        except HTTPException as err:
-            print "[{0}] {1}".format(type(err).__name__, str(err))
-            raise err
+            raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
 
         except Exception as err:
-            print "[{0}] {1}".format(type(err).__name__, str(err))
-            raise InternalServerError(str(err))
+            raise InternalServerError("[{0}] {1}".format(type(err).__name__, str(err)))
 
