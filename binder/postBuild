@@ -6,3 +6,6 @@ jupyter labextension install @jupyter-widgets/jupyterlab-manager
 
 # Notebooks w/ extensions that auto-run code must be "trusted" to work the first time
 jupyter trust lsq_notebook.ipynb
+
+# apply a dark theme
+jt -t onedork -fs 95 -altp -tfs 11 -nfs 115 -cellw 88% -T
