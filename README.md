@@ -1,3 +1,5 @@
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/CoeJoder/Nonlinear-Least-Squares/master)
+
 # Ski Slope Least-Squares
 A simple website interface for a SciPy least-squares curve-fitting function.
 Written in Python, using the Flask framework.
