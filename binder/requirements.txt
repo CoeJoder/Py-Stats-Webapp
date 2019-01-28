@@ -34,10 +34,16 @@ jsonschema==2.6.0
 jupyter==1.0.0
 jupyter-client==5.2.4
 jupyter-console==5.2.0
+jupyter-contrib-core==0.3.3
+jupyter-contrib-nbextensions==0.5.1
 jupyter-core==4.4.0
+jupyter-highlight-selected-word==0.2.0
+jupyter-latex-envs==1.4.6
+jupyter-nbextensions-configurator==0.4.1
 jupyterthemes==0.20.0
 kiwisolver==1.0.1
 lesscpy==0.13.0
+lxml==4.3.0
 MarkupSafe==1.1.0
 matplotlib==2.2.3
 mistune==0.8.4
@@ -61,6 +67,7 @@ pyparsing==2.3.0
 python-dateutil==2.7.5
 pytz==2018.7
 pywinpty==0.5.5
+PyYAML==3.13
 pyzmq==17.1.2
 qtconsole==4.4.3
 requests==2.21.0
