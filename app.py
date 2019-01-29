@@ -54,13 +54,11 @@ def get_numpy_val(input_name, input_val):
 
 @app.errorhandler(HTTPException)
 def handle_httpexception(error):
-    print str(error)
     return jsonify(code=error.code, name=error.name, description=error.description), error.code
 
 
 @app.errorhandler(Exception)
 def handle_exception(error):
-    print str(error)
     return jsonify(code=500, description=error.message), 500
 
 
@@ -116,9 +114,11 @@ def desmos_calculate_regression():
         return jsonify(h=h, b=b, v=v, p=p)
 
     except KeyError as err:
+        print str(err)
         raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
 
     except Exception as err:
+        print str(err)
         raise InternalServerError("[{0}] {1}".format(type(err).__name__, str(err)))
 
 
@@ -146,9 +146,11 @@ def submit_zdist_analysis():
         return send_file(buf, mimetype="image/png")
 
     except KeyError as err:
+        print str(err)
         raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
 
     except Exception as err:
+        print str(err)
         raise InternalServerError("[{0}] {1}".format(type(err).__name__, str(err)))
 
 
@@ -191,7 +193,9 @@ def submit_lsq_analysis():
         return send_file(buf, mimetype="image/png")
 
     except KeyError as err:
+        print str(err)
         raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
 
     except Exception as err:
+        print str(err)
         raise InternalServerError("[{0}] {1}".format(type(err).__name__, str(err)))
