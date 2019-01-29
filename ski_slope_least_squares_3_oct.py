@@ -7,43 +7,11 @@ from matplotlib import rcParams
 from io import BytesIO
 from PIL import Image
 from xlrd import open_workbook
+import ski_stats
 
 DEFAULT_INITIAL_PARAMS_GUESS = (700, 200, 0, 24)
 DEFAULT_BOUNDS = ([-np.inf, -np.inf, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf])
 DEFAULT_MAX_NFEV = 1000000000
-
-
-class CalcResults:
-    """simple container for holding calc results"""
-    def __init__(self, results=None):
-        for key in results:
-            self.__dict__[key] = results[key]
-
-
-class LeastSquaresException(Exception):
-    """raised if error during curve fitting"""
-    pass
-
-
-def parse_workbook(workbook, use_arrays=True):
-    sheet = workbook.sheet_by_index(0)
-
-    # create blank lists to store excel columns
-    time = []
-    data = []
-
-    # retrieve time (col A) and data (col B)
-    for row in range(sheet.nrows):
-        time.append(sheet.cell_value(row, 0))
-        data.append(sheet.cell_value(row, 1))
-
-    # caller may need regular list, as NumPy arrays are not JSON serializable
-    if not use_arrays:
-        return time, data
-
-    # convert the lists to NumPy arrays, which are much faster, and can be
-    # passed as parameters to NumPy/SciPy matrix functions
-    return np.array(time), np.array(data)
 
 
 def cos_fit(params, x):
@@ -66,44 +34,6 @@ def residuals(params, x, y):
     return cos_fit(params, x) - y
 
 
-def pearson(x, y):
-    # computes pearson correlation coefficient (r) and coefficient of determination (r^2) between arrays x and y.
-    # also computes means (xmean, ymean), sums of squares (SSx, SSy) standard deviations (SDy, SDy), /
-    # covariance (COVxy) and degrees of freedom (rdf).
-
-    xlen = len(x)
-    ylen = len(y)
-
-    xsum = float(0)
-    ysum = float(0)
-
-    for values in x:
-        xsum += float(values)
-    for values in y:
-        ysum += float(values)
-
-    xmean = float(xsum/xlen)
-    ymean = float(ysum/ylen)
-    ss_x = float(0)
-    ss_y = float(0)
-
-    for values in x:
-        ss_x += float((values-xmean)**2)
-    for values in y:
-        ss_y += float((values-ymean)**2)
-
-    sd_x = float(ss_x/xlen)**.5
-    sd_y = float(ss_y/ylen)**.5
-
-    cov_xy = 0
-    rdf = len(x) - 2
-
-    for a, b in zip(x, y):
-        cov_xy += float((a-xmean)*(b-ymean))
-    # convert this to str containing dfs?
-    return float((cov_xy/xlen)/(sd_x*sd_y))
-
-
 def least_squares(time, data, params_guess, loss, bounds, max_nfev):
     """Get the solved params and residuals.
     time -- the time array
@@ -119,7 +49,7 @@ def least_squares(time, data, params_guess, loss, bounds, max_nfev):
     result = optimize.least_squares(residuals, params_guess, loss=loss, bounds=bounds, max_nfev=max_nfev,
                                     args=(time, data))
     if not result.success:
-        raise LeastSquaresException("Failed to fit the function: " + result.message)
+        raise ski_stats.CurveFitException("Failed to fit the function: " + result.message)
     # solved params are stored in `x`, residuals are stored in `fun`
     return result.x, result.fun
 
@@ -128,7 +58,7 @@ def do_calculations(time, data, params_guess=DEFAULT_INITIAL_PARAMS_GUESS, bound
     """Fit the curve and perform additional calculations."""
 
     lsq_params, lsq_residuals = least_squares(time, data, params_guess, "linear", bounds, max_nfev)
-    lsq_r = pearson(cos_fit(lsq_params, time), data)
+    lsq_r = ski_stats.pearson(cos_fit(lsq_params, time), data)
     lsq_r2 = lsq_r ** 2
 
     # find SS (Sum of squared residuals. The defining value of the "fitted" function is to return the smallest possible SS
@@ -284,7 +214,7 @@ def do_calculations(time, data, params_guess=DEFAULT_INITIAL_PARAMS_GUESS, bound
     peak_auc_list = []
 
     while peak_cycle < len(peak_time_list):
-        peak_auc_list.append(peak_auc(peak_time_list[peak_cycle], peak_data_list[peak_cycle]))
+        peak_auc_list.append(ski_stats.peak_auc(peak_time_list[peak_cycle], peak_data_list[peak_cycle]))
         peak_cycle += 1
 
     # write all peak_mp_auc calculations to a list
@@ -292,11 +222,11 @@ def do_calculations(time, data, params_guess=DEFAULT_INITIAL_PARAMS_GUESS, bound
     peak_mp_auc_list = []
 
     while mp_cycle < len(peak_time_list):
-        peak_mp_auc_list.append(midpoint_peak_auc(peak_time_list[mp_cycle], peak_data_list[mp_cycle]))
+        peak_mp_auc_list.append(ski_stats.midpoint_peak_auc(peak_time_list[mp_cycle], peak_data_list[mp_cycle]))
         mp_cycle += 1
 
     # box-up and return the results
-    return CalcResults({
+    return ski_stats.CalcResults({
         "ss_lsq": ss_lsq, "lsq_residuals": lsq_residuals, "lsq_r": lsq_r, "lsq_r2": lsq_r2, "lsq_acro": lsq_acro,
         "lsq_peak_value": lsq_peak_value, "lsq_mesor": lsq_mesor, "y_int": y_int, "lsq_acro_list_x": lsq_acro_list_x,
         "lsq_acro_list_y": lsq_acro_list_y, "lsq_params": lsq_params, "idx": idx, "x_int": x_int,
@@ -305,36 +235,6 @@ def do_calculations(time, data, params_guess=DEFAULT_INITIAL_PARAMS_GUESS, bound
         "offset_index_coords": offset_index_coords, "peak_time_list": peak_time_list, "peak_data_list": peak_data_list,
         "peak_auc_list": peak_auc_list, "peak_mp_auc_list": peak_mp_auc_list
     })
-
-
-def peak_auc(time, data):
-    # trapezoidal area under curve function to find auc between all qualifying onset and offset times
-    # uses peak_time_list, and peak_data_list
-    if len(time) < 1:
-        first_last_duration_amount = 0
-        print "peak not found"
-    elif (2*len(time))*(data[0]+data[len(data)-1]) != 0:
-        first_last_duration_amount = ((time[len(time)-1] - time[0])/((2*(len(time)-1))*(data[0]+data[len(data)-1])))
-    else:
-        first_last_duration_amount = 0
-
-    # all other indices
-    tote = 0
-    for pts in data:
-        if pts != data[0] or pts != data[len(data)-1]:
-            mid_duration_amount = ((time[len(time)-1]) - time[0])/(2*(len(time)-1))*2*pts
-            tote += mid_duration_amount
-    night_total = tote + first_last_duration_amount
-    return night_total
-
-
-def midpoint_peak_auc(time, data):
-    # midpoint auc calculation
-    total_sum = 0
-    for i in range(len(time)-1):
-        mp_sum = (time[i+1] - time[i])*((data[i] + data[i + 1])/2)
-        total_sum += mp_sum
-    return total_sum
 
 
 def generate_plot_image(time, data, results, include_text=True):
@@ -406,17 +306,20 @@ def generate_plot_image(time, data, results, include_text=True):
 
 def main():
     """The main runner for interactive commandline invocation.  Performs calc, generates image, prints results."""
+    import os
+    import sys
 
     # retrieve xlsx file, user inputs name of file
     file_name = raw_input("What is the name of your excel file?")
     file_path = os.path.join(os.getcwd(), str(file_name) + ".xlsx")
-    image_output_path = os.path.join(os.getcwd(), str(file_name) + "_cos_fit_output.png")
+    script_name_no_ext = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+    image_output_path = os.path.join(os.getcwd(), str(file_name) + "_" + script_name_no_ext + ".png")
 
     # parse spreadsheet, do calculations, generate image
-    time, data = parse_workbook(open_workbook(file_path))
+    time, data = ski_stats.parse_workbook(open_workbook(file_path))
     try:
         results = do_calculations(time, data)
-    except LeastSquaresException as err:
+    except ski_stats.CurveFitException as err:
         print err.message
         sys.exit(-1)
 
@@ -468,6 +371,4 @@ def main():
 
 # if script is being run directly from commandline
 if __name__ == "__main__":
-    import os
-    import sys
     main()

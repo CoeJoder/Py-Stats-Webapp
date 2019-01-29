@@ -1,9 +1,53 @@
-
-////////////TODO
-////////////-ensure that initial guess is within bounds if specified
 jQuery(function($) {
     var DEFAULT_ERROR_MESSAGE = "An unknown exception occurred during processing.";
     var DEFAULT_SERVER_ERROR_STATUS = "SERVER ERROR";
+
+    var $zdistHeader = $("#zdist_header");
+    var $zdistForm = $("#zdist_form");
+    var $zdistErrorLog = $("#zdist_form .error_log");
+    var $zdistImageContainer = $("#zdist_form .image_container");
+    var $zdistResultsContainer = $("#zdist_form .calc_results_container");
+
+    var $lsqHeader = $("#lsq_header");
+    var $lsqForm = $("#lsq_form");
+    var $lsqErrorLog = $("#lsq_form .error_log");
+    var $lsqImageContainer = $("#lsq_form .image_container");
+    var $lsqResultsContainer = $("#lsq_form .calc_results_container");
+
+    // starts with zdist panel showing
+    var $form = $zdistForm;
+    var $errorLog = $zdistErrorLog;
+    var $imageContainer = $zdistImageContainer;
+    var $resultsContainer = $zdistResultsContainer;
+
+    // init analysis selector
+    $("#analysis").selectmenu({
+        width: "auto",
+        change: function(event, ui) {
+            var val = $(this).val();
+            if (val == "lsq") {
+                $zdistHeader.hide();
+                $zdistForm.hide();
+                $lsqHeader.show();
+                $lsqForm.show();
+                $form = $lsqForm;
+                $errorLog = $lsqErrorLog;
+                $imageContainer = $lsqImageContainer;
+                $resultsContainer = $lsqResultsContainer;
+            }
+            else {
+                $lsqHeader.hide();
+                $lsqForm.hide();
+                $zdistHeader.show();
+                $zdistForm.show();
+                $form = $zdistForm;
+                $errorLog = $zdistErrorLog;
+                $imageContainer = $zdistImageContainer;
+                $resultsContainer = $zdistResultsContainer;
+            }
+            clearError();
+        }
+    });
 
     // toggle the bounds section using a checkbox
     $("#specify_bounds").change(function() {
@@ -18,7 +62,7 @@ jQuery(function($) {
     });
 
     // asynchronous form submission
-    $("#spreadsheet_upload").submit(function(e) {
+    $("form").submit(function(e) {
         clearError();
         clearImage();
         var $form = $(this);
@@ -73,17 +117,17 @@ jQuery(function($) {
                 }
             },
             beforeSend: function() {
-                $("#spinner").show();
+                $form.find(".spinner").show();
             },
             complete: function() {
-                $("#spinner").hide();
+                $form.find(".spinner").hide();
             }
         });
         e.preventDefault();
     });
 
     function displayError(str, textStatus = "ERROR") {
-        $("#error_log").append("<span style='padding-right: 10px;'>[" + textStatus +"]</span> " + str).fadeIn(150);
+        $errorLog.append("<span style='padding-right: 10px;'>[" + textStatus +"]</span> " + str).fadeIn(150);
     }
 
     function isHtml(str) {
@@ -103,7 +147,6 @@ jQuery(function($) {
     }
 
     function displayUncaughtException(html, textStatus) {
-        var $errorLog = $("#error_log");
         var $iframe = $('<iframe></iframe>').appendTo($errorLog);
         var iframe = $iframe.get(0);
         iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument);
@@ -114,14 +157,14 @@ jQuery(function($) {
     }
 
     function clearError() {
-        $("#error_log").empty().css("display", "none");
+        $errorLog.empty().css("display", "none");
     }
 
     function displayImage(src) {
-        $("<img/>").attr("src", src).appendTo("#image_container").parent().fadeIn();
+        $("<img/>").attr("src", src).appendTo($imageContainer).parent().fadeIn();
     }
 
     function clearImage() {
-        $("#image_container").empty().css("display", "none");
+        $imageContainer.empty().css("display", "none");
     }
 });
