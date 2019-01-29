@@ -58,6 +58,12 @@ def handle_httpexception(error):
     return jsonify(code=error.code, name=error.name, description=error.description), error.code
 
 
+@app.errorhandler(Exception)
+def handle_exception(error):
+    print str(error)
+    return jsonify(code=500, description=error.message), 500
+
+
 @app.route("/desmos")
 def desmos_graph():
     return render_template("desmos-graph.html")
@@ -142,6 +148,9 @@ def submit_zdist_analysis():
     except KeyError as err:
         raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
 
+    except Exception as err:
+        raise InternalServerError("[{0}] {1}".format(type(err).__name__, str(err)))
+
 
 @app.route("/lsqAnalysis", methods=["POST"])
 def submit_lsq_analysis():
@@ -184,3 +193,5 @@ def submit_lsq_analysis():
     except KeyError as err:
         raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
 
+    except Exception as err:
+        raise InternalServerError("[{0}] {1}".format(type(err).__name__, str(err)))
