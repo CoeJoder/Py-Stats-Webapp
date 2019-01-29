@@ -19,6 +19,9 @@
 bind = '0.0.0.0:8000'
 backlog = 2048
 
+# Redirect stdout/stederr to the errorlog
+capture_output = True
+
 #
 # Worker processes
 #
