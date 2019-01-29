@@ -3,7 +3,9 @@ from werkzeug.exceptions import BadRequest, InternalServerError, HTTPException
 from xlrd import open_workbook
 import numpy as np
 from fastnumbers import fast_real
-from ski_slope_least_squares_3_oct import parse_workbook, do_calculations, generate_plot_image, LeastSquaresException
+import ski_slope_least_squares_3_oct as lsq
+import z_dist_fit_10_nov as zdist
+import ski_stats
 
 EXCEL_EXTENSIONS = {'xlsx', 'xls'}
 
@@ -56,12 +58,6 @@ def handle_httpexception(error):
     return jsonify(code=error.code, name=error.name, description=error.description), error.code
 
 
-@app.errorhandler(Exception)
-def handle_exception(error):
-    print str(error)
-    return jsonify(code=500, description=error.message), 500
-
-
 @app.route("/desmos")
 def desmos_graph():
     return render_template("desmos-graph.html")
@@ -71,7 +67,7 @@ def desmos_graph():
 def parse_uploaded_spreadsheet():
     # spreadsheet submitted for parsing only
     file_stream = get_uploaded_spreadsheet()
-    time, data = parse_workbook(open_workbook(file_contents=file_stream.read()), use_arrays=False)
+    time, data = ski_stats.parse_workbook(open_workbook(file_contents=file_stream.read()), use_arrays=False)
     return jsonify(x=time, y=data)
 
 
@@ -104,10 +100,10 @@ def desmos_calculate_regression():
             bounds = ([h_lower, b_lower, v_lower, p_lower], [h_upper, b_upper, v_upper, p_upper])
 
             # run calculation with bounds
-            results = do_calculations(time=time, data=data, params_guess=(h, b, v, p), bounds=bounds, max_nfev=max_nfev)
+            results = lsq.do_calculations(time=time, data=data, params_guess=(h, b, v, p), bounds=bounds, max_nfev=max_nfev)
         else:
             # run calculation without bounds
-            results = do_calculations(time=time, data=data, params_guess=(h, b, v, p), max_nfev=max_nfev)
+            results = lsq.do_calculations(time=time, data=data, params_guess=(h, b, v, p), max_nfev=max_nfev)
 
         # for now, the Desmos-style page expects just the param solutions
         h, b, v, p = results.lsq_params
@@ -120,52 +116,71 @@ def desmos_calculate_regression():
         raise InternalServerError("[{0}] {1}".format(type(err).__name__, str(err)))
 
 
-@app.route("/", methods=["GET", "POST"])
-def ski_slope():
-    if request.method == "GET":
-        # serve HTML form
-        return render_template("ski-slope.html")
-    else:
-        # form was submitted
-        file_stream = get_uploaded_spreadsheet()
-        try:
-            # parse the uploaded spreadsheet
-            time, data = parse_workbook(open_workbook(file_contents=file_stream.read()))
+@app.route("/", methods=["GET"])
+def start_page():
+    return render_template("ski-slope.html")
 
-            # parse the form inputs
-            h = get_numpy_val_from_form_input("h")
-            b = get_numpy_val_from_form_input("b")
-            v = get_numpy_val_from_form_input("v")
-            p = get_numpy_val_from_form_input("p")
-            max_nfev = get_numpy_val_from_form_input("max_nfev")
-            include_text = request.form.get("include_text") is not None
 
-            if request.form.get("specify_bounds"):
-                # bounds were specified
-                h_upper = get_numpy_val_from_form_input("h_upper")
-                b_upper = get_numpy_val_from_form_input("b_upper")
-                v_upper = get_numpy_val_from_form_input("v_upper")
-                p_upper = get_numpy_val_from_form_input("p_upper")
+@app.route("/zdistAnalysis", methods=["POST"])
+def submit_zdist_analysis():
+    file_stream = get_uploaded_spreadsheet()
+    try:
+        # parse the uploaded spreadsheet
+        time, data = ski_stats.parse_workbook(open_workbook(file_contents=file_stream.read()))
+        user_threshold_raw = request.form["user_threshold"]
+        user_threshold = fast_real(user_threshold_raw)
+        if not isinstance(user_threshold, (int, long, float)) or not (1 <= user_threshold <= 100):
+            raise BadRequest("Invalid value for \"user_threshold\" ({1}).  Expected value between 1 and 100."
+                             .format(user_threshold_raw))
 
-                h_lower = get_numpy_val_from_form_input("h_lower")
-                b_lower = get_numpy_val_from_form_input("b_lower")
-                v_lower = get_numpy_val_from_form_input("v_lower")
-                p_lower = get_numpy_val_from_form_input("p_lower")
-                bounds = ([h_lower, b_lower, v_lower, p_lower], [h_upper, b_upper, v_upper, p_upper])
+        # run the zdist calculation
+        user_threshold = float(user_threshold)
+        results = zdist.do_calculations(time, data, user_threshold)
+        buf = zdist.generate_plot_image(time, data, user_threshold, results)
+        return send_file(buf, mimetype="image/png")
 
-                # run calculation with bounds
-                results = do_calculations(time=time, data=data, params_guess=(h, b, v, p), bounds=bounds, max_nfev=max_nfev)
-            else:
-                # run calculation without bounds
-                results = do_calculations(time=time, data=data, params_guess=(h, b, v, p), max_nfev=max_nfev)
+    except KeyError as err:
+        raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
 
-            # generate image and send as response
-            buf = generate_plot_image(time, data, results, include_text)
-            return send_file(buf, mimetype="image/png")
 
-        except KeyError as err:
-            raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
+@app.route("/lsqAnalysis", methods=["POST"])
+def submit_lsq_analysis():
+    file_stream = get_uploaded_spreadsheet()
+    try:
+        # parse the uploaded spreadsheet
+        time, data = ski_stats.parse_workbook(open_workbook(file_contents=file_stream.read()))
 
-        except Exception as err:
-            raise InternalServerError("[{0}] {1}".format(type(err).__name__, str(err)))
+        # parse the form inputs
+        h = get_numpy_val_from_form_input("h")
+        b = get_numpy_val_from_form_input("b")
+        v = get_numpy_val_from_form_input("v")
+        p = get_numpy_val_from_form_input("p")
+        max_nfev = get_numpy_val_from_form_input("max_nfev")
+        include_text = request.form.get("include_text") is not None
+
+        if request.form.get("specify_bounds"):
+            # bounds were specified
+            h_upper = get_numpy_val_from_form_input("h_upper")
+            b_upper = get_numpy_val_from_form_input("b_upper")
+            v_upper = get_numpy_val_from_form_input("v_upper")
+            p_upper = get_numpy_val_from_form_input("p_upper")
+
+            h_lower = get_numpy_val_from_form_input("h_lower")
+            b_lower = get_numpy_val_from_form_input("b_lower")
+            v_lower = get_numpy_val_from_form_input("v_lower")
+            p_lower = get_numpy_val_from_form_input("p_lower")
+            bounds = ([h_lower, b_lower, v_lower, p_lower], [h_upper, b_upper, v_upper, p_upper])
+
+            # run calculation with bounds
+            results = lsq.do_calculations(time=time, data=data, params_guess=(h, b, v, p), bounds=bounds, max_nfev=max_nfev)
+        else:
+            # run calculation without bounds
+            results = lsq.do_calculations(time=time, data=data, params_guess=(h, b, v, p), max_nfev=max_nfev)
+
+        # generate image and send as response
+        buf = lsq.generate_plot_image(time, data, results, include_text)
+        return send_file(buf, mimetype="image/png")
+
+    except KeyError as err:
+        raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
 
