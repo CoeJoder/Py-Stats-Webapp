@@ -19,9 +19,6 @@
 bind = '0.0.0.0:8000'
 backlog = 2048
 
-# Redirect stdout/stederr to the errorlog
-capture_output = True
-
 #
 # Worker processes
 #
@@ -144,9 +141,12 @@ tmp_upload_dir = None
 #
 
 errorlog = './logs/error.log'
-loglevel = 'info'
+loglevel = 'debug'
 accesslog = './logs/access.log'
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
+
+# Redirect stdout/stederr to the errorlog
+capture_output = True
 
 #
 # Process naming
