@@ -4,7 +4,7 @@ jQuery(function($) {
 
     // returns true if string is valid HTML
     function isHtml(str) {
-        var doc = new DOMParser().parseFromString(str, "text/html");
+        const doc = new DOMParser().parseFromString(str, "text/html");
         return Array.from(doc.body.childNodes).some(function(node) {
             return node.nodeType == 1;
         });
