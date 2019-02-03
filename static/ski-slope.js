@@ -1,4 +1,15 @@
 (() => {
+    const DEFAULT_ERROR_MESSAGE = "An unknown exception occurred during processing.";
+    const DEFAULT_SERVER_ERROR_STATUS = "SERVER ERROR";
+
+    // returns true if string is valid HTML
+    function isHtml(str) {
+        const doc = new DOMParser().parseFromString(str, "text/html");
+        return Array.from(doc.body.childNodes).some(function(node) {
+            return node.nodeType == 1;
+        });
+    }
+
     // encapsulation of DOM elements representing an analysis
     class Analysis {
         constructor(headerSelector, formSelector) {
@@ -130,16 +141,6 @@
 
     // on document load
     jQuery(function($) {
-        const DEFAULT_ERROR_MESSAGE = "An unknown exception occurred during processing.";
-        const DEFAULT_SERVER_ERROR_STATUS = "SERVER ERROR";
-
-        // returns true if string is valid HTML
-        function isHtml(str) {
-            const doc = new DOMParser().parseFromString(str, "text/html");
-            return Array.from(doc.body.childNodes).some(function(node) {
-                return node.nodeType == 1;
-            });
-        }
 
         // we currently have two analyses on the page
         const zdist = window.SkiSlope.zdist = new Analysis("#zdist_header", "#zdist_form");
@@ -156,5 +157,8 @@
                 lsq.$form.find("#bounds_overlay").css("z-index", 1);
             }
         });
+
+        // ensure selected analysis is still displayed on page refresh
+        window.SkiSlope.$analysisSelector.selectmenu("option", "change").bind(window.SkiSlope.$analysisSelector)();
     });
 })();
