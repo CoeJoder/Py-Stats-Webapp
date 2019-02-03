@@ -1,15 +1,4 @@
-jQuery(function($) {
-    const DEFAULT_ERROR_MESSAGE = "An unknown exception occurred during processing.";
-    const DEFAULT_SERVER_ERROR_STATUS = "SERVER ERROR";
-
-    // returns true if string is valid HTML
-    function isHtml(str) {
-        const doc = new DOMParser().parseFromString(str, "text/html");
-        return Array.from(doc.body.childNodes).some(function(node) {
-            return node.nodeType == 1;
-        });
-    }
-
+(() => {
     // encapsulation of DOM elements representing an analysis
     class Analysis {
         constructor(headerSelector, formSelector) {
@@ -19,6 +8,14 @@ jQuery(function($) {
             this.$imageContainer = this.$form.find(".image_container");
             this.$resultsContainer = this.$form.find(".calc_results_container");
             const that = this;
+
+            // display uploaded filename on selection
+            this.$form.find(".upload_button").change(function() {
+                const fileList = $(this).prop("files");
+                if (fileList && fileList.length > 0) {
+                    that.$form.find(".upload_filename").text(fileList[0].name);
+                }
+            });
 
             // async form submission
             this.$form.submit(function(e) {
@@ -119,7 +116,7 @@ jQuery(function($) {
         }
 
         clearError() {
-            this.$errorLog.empty().css("display", "none");
+            this.$errorLog.empty().hide();
         }
 
         displayImage(src) {
@@ -127,39 +124,37 @@ jQuery(function($) {
         }
 
         clearImage() {
-            this.$imageContainer.empty().css("display", "none");
+            this.$imageContainer.empty().hide();
         }
     }
 
-    // we currently have two analyses on the page
-    const zdist = new Analysis("#zdist_header", "#zdist_form");
-    const lsq = new Analysis("#lsq_header", "#lsq_form");
+    // on document load
+    jQuery(function($) {
+        const DEFAULT_ERROR_MESSAGE = "An unknown exception occurred during processing.";
+        const DEFAULT_SERVER_ERROR_STATUS = "SERVER ERROR";
 
-    // for lsq, toggle the bounds section using a checkbox
-    lsq.$form.find("#specify_bounds").change(function() {
-        if ($(this).is(":checked")) {
-            lsq.$form.find("#bounds input").prop("disabled", false);
-            lsq.$form.find("#bounds_overlay").css("z-index", -1);
+        // returns true if string is valid HTML
+        function isHtml(str) {
+            const doc = new DOMParser().parseFromString(str, "text/html");
+            return Array.from(doc.body.childNodes).some(function(node) {
+                return node.nodeType == 1;
+            });
         }
-        else {
-            lsq.$form.find("#bounds input").prop("disabled", true);
-            lsq.$form.find("#bounds_overlay").css("z-index", 1);
-        }
-    });
 
-    // initialize analysis selector
-    $("#analysis").selectmenu({
-        width: "auto",
-        change: function(event, ui) {
-            const val = $(this).val();
-            if (val == "lsq") {
-                zdist.hide();
-                lsq.show();
+        // we currently have two analyses on the page
+        const zdist = window.SkiSlope.zdist = new Analysis("#zdist_header", "#zdist_form");
+        const lsq = window.SkiSlope.lsq = new Analysis("#lsq_header", "#lsq_form");
+
+        // for lsq, toggle the bounds section using a checkbox
+        lsq.$form.find("#specify_bounds").change(function() {
+            if ($(this).is(":checked")) {
+                lsq.$form.find("#bounds input").prop("disabled", false);
+                lsq.$form.find("#bounds_overlay").css("z-index", -1);
             }
             else {
-                lsq.hide();
-                zdist.show()
+                lsq.$form.find("#bounds input").prop("disabled", true);
+                lsq.$form.find("#bounds_overlay").css("z-index", 1);
             }
-        }
+        });
     });
-});
+})();

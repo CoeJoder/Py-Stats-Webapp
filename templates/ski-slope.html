@@ -42,7 +42,15 @@
             <div id="zdist_fields" class="form-panel">
                 <div class="field">
                     <div>Select measurement data</div>
-                    <div><input class="ui-button ui-widget ui-corner-all" type="file" name="spreadsheet"/></div>
+                    <div>
+                        <label>
+                            <span class="ui-button ui-widget ui-corner-all" role="button">
+                                Browse...
+                            </span>
+                            <input class="upload_button" type="file" name="spreadsheet" style="display: none;"/>
+                        </label>
+                        <span class="upload_filename"></span>
+                    </div>
                 </div>
                 <div class="field">
                     <div>Enter % for threshold (5-95)</div>
@@ -63,7 +71,15 @@
             <div id="lsq_fields" class="form-panel">
                 <div class="field">
                     <div>Select measurement data</div>
-                    <div><input class="ui-button ui-widget ui-corner-all" type="file" name="spreadsheet"/></div>
+                    <div>
+                        <label>
+                            <span class="ui-button ui-widget ui-corner-all" role="button">
+                                Browse...
+                            </span>
+                            <input class="upload_button" type="file" name="spreadsheet" style="display: none;"/>
+                        </label>
+                        <span class="upload_filename"></span>
+                    </div>
                 </div>
                 <div class="field">
                     <div id="curve_equation"></div>
@@ -127,6 +143,25 @@
             throwOnError: false
         });
         {% endraw %}
+
+        // initialize module
+        window.SkiSlope = (window.SkiSlope || {});
+
+        // initialize analysis selector
+        $("#analysis").selectmenu({
+            width: "auto",
+            change: function(event, ui) {
+                const val = $(this).val();
+                if (val == "lsq") {
+                    window.SkiSlope.zdist.hide();
+                    window.SkiSlope.lsq.show();
+                }
+                else {
+                    window.SkiSlope.lsq.hide();
+                    window.SkiSlope.zdist.show();
+                }
+            }
+        });
     </script>
 </body>
 </html>
