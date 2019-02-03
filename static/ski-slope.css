@@ -87,6 +87,15 @@ input {
     vertical-align: middle;
 }
 
+.upload_button {
+    padding: 10px 20px;
+}
+
+.upload_filename {
+    font-style: italic;
+    padding-left: 10px;
+}
+
 hr {
     background-color: #333;
     opacity: 0.5;
