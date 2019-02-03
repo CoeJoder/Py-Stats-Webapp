@@ -36,9 +36,9 @@
             </select>
         </div>
         <hr/>
-        <h2 id ="zdist_header">Normal Distribution Curve Fit</h2>
+        <h2 id ="zdist_header" style="display: none;">Normal Distribution Curve Fit</h2>
         <h2 id="lsq_header" style="display: none;">Least Squares Curve Fit<a id="desmos_link" href="/desmos"><img class="ui-corner-all" src="{{ url_for('static', filename='desmos_logo.png') }}"></a></h2>
-        <form id="zdist_form" action="{{ url_for('submit_zdist_analysis') }}" method="post" enctype="multipart/form-data">
+        <form id="zdist_form" action="{{ url_for('submit_zdist_analysis') }}" method="post" enctype="multipart/form-data" style="display: none;">
             <div id="zdist_fields" class="form-panel">
                 <div class="field">
                     <div>Select measurement data</div>
@@ -148,7 +148,7 @@
         window.SkiSlope = (window.SkiSlope || {});
 
         // initialize analysis selector
-        $("#analysis").selectmenu({
+            window.SkiSlope.$analysisSelector = $("#analysis").selectmenu({
             width: "auto",
             change: function(event, ui) {
                 const val = $(this).val();
