@@ -1,4 +1,4 @@
-(() => {
+(function() {
     const DEFAULT_ERROR_MESSAGE = "An unknown exception occurred during processing.";
     const DEFAULT_SERVER_ERROR_STATUS = "SERVER ERROR";
 
@@ -11,103 +11,101 @@
     }
 
     // encapsulation of DOM elements representing an analysis
-    class Analysis {
-        constructor(headerSelector, formSelector) {
-            this.$header = $(headerSelector);
-            this.$form = $(formSelector);
-            this.$errorLog = this.$form.find(".error_log");
-            this.$imageContainer = this.$form.find(".image_container");
-            this.$resultsContainer = this.$form.find(".calc_results_container");
-            const that = this;
+    function Analysis(headerSelector, formSelector) {
+        this.$header = $(headerSelector);
+        this.$form = $(formSelector);
+        this.$errorLog = this.$form.find(".error_log");
+        this.$imageContainer = this.$form.find(".image_container");
+        this.$resultsContainer = this.$form.find(".calc_results_container");
+        const that = this;
 
-            // display uploaded filename on selection
-            this.$form.find(".upload_button").change(function() {
-                const fileList = $(this).prop("files");
-                if (fileList && fileList.length > 0) {
-                    that.$form.find(".upload_filename").text(fileList[0].name);
+        // display uploaded filename on selection
+        this.$form.find(".upload_button").change(function() {
+            const fileList = $(this).prop("files");
+            if (fileList && fileList.length > 0) {
+                that.$form.find(".upload_filename").text(fileList[0].name);
+            }
+        });
+
+        // async form submission
+        this.$form.submit(function(e) {
+            e.preventDefault();
+            that.clearError();
+            that.clearImage();
+            $.ajax({
+                type: "POST",
+                url: that.$form.attr("action"),
+                data: new FormData(this),
+                cache: false,
+                contentType: false,
+                processData: false,
+                xhr: function() {
+                    const xhr = $.ajaxSettings.xhr();
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState == 2) {
+                            if (xhr.status == 200) {
+                                // successful requests will return an image blob
+                                xhr.responseType = "blob";
+                            }
+                        }
+                    }
+                    return xhr;
+                },
+                success: function(response, textStatus, jqXHR) {
+                    if (!response) {
+                        that.displayError("Expected an image, but the server response was empty.");
+                    }
+                    else {
+                        // generate a local URL for the received image blob
+                        const url = window.URL || window.webkitURL;
+                        const src = url.createObjectURL(response);
+                        that.displayImage(src);
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log(jqXHR);
+                    console.log(textStatus, errorThrown)
+                    const responseText = jqXHR.responseText;
+                    if (jqXHR.hasOwnProperty("responseJSON")) {
+                        that.displayCaughtException(jqXHR.responseJSON);
+                    }
+                    else if (typeof responseText != "undefined") {
+                        if (isHtml(responseText)) {
+                            that.displayUncaughtException(responseText, errorThrown);
+                        }
+                        else {
+                            that.displayError(responseText);
+                        }
+                    }
+                    else {
+                        that.displayError(DEFAULT_ERROR_MESSAGE);
+                    }
+                },
+                beforeSend: function() {
+                    that.$form.find(".spinner").show();
+                },
+                complete: function() {
+                    that.$form.find(".spinner").hide();
                 }
             });
+        });
 
-            // async form submission
-            this.$form.submit(function(e) {
-                e.preventDefault();
-                that.clearError();
-                that.clearImage();
-                $.ajax({
-                    type: "POST",
-                    url: that.$form.attr("action"),
-                    data: new FormData(this),
-                    cache: false,
-                    contentType: false,
-                    processData: false,
-                    xhr: function() {
-                        const xhr = $.ajaxSettings.xhr();
-                        xhr.responseType = "text";
-                        xhr.onreadystatechange = function() {
-                            if (xhr.readyState == 2) {
-                                if (xhr.status == 200) {
-                                    // successful requests will return an image blob
-                                    xhr.responseType = "blob";
-                                }
-                            }
-                        }
-                        return xhr;
-                    },
-                    success: function(response, textStatus, jqXHR) {
-                        if (!response) {
-                            that.displayError("Expected an image, but the server response was empty.");
-                        }
-                        else {
-                            // generate a local URL for the received image blob
-                            const url = window.URL || window.webkitURL;
-                            const src = url.createObjectURL(response);
-                            that.displayImage(src);
-                        }
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        console.log(jqXHR);
-                        console.log(textStatus, errorThrown)
-                        const responseText = jqXHR.responseText;
-                        if (jqXHR.hasOwnProperty("responseJSON")) {
-                            that.displayCaughtException(jqXHR.responseJSON);
-                        }
-                        else if (typeof responseText != "undefined") {
-                            if (isHtml(responseText)) {
-                                that.displayUncaughtException(responseText, errorThrown);
-                            }
-                            else {
-                                that.displayError(responseText);
-                            }
-                        }
-                        else {
-                            that.displayError(DEFAULT_ERROR_MESSAGE);
-                        }
-                    },
-                    beforeSend: function() {
-                        that.$form.find(".spinner").show();
-                    },
-                    complete: function() {
-                        that.$form.find(".spinner").hide();
-                    }
-                });
-            });
-        }
-
-        show() {
+        Analysis.prototype.show = function() {
             this.$header.show();
             this.$form.show();
         }
 
-        hide() {
+        Analysis.prototype.hide = function() {
             this.$header.hide();
             this.$form.hide();
         }
 
-        displayError(str, textStatus = "ERROR") {
+        Analysis.prototype.displayError = function(str, textStatus) {
+            textStatus = textStatus || "ERROR";
             this.$errorLog.append("<span style='padding-right: 10px;'>[" + textStatus +"]</span> " + str).fadeIn(150);
         }
 
-        displayCaughtException(responseJSON) {
+        Analysis.prototype.displayCaughtException = function(responseJSON) {
             const msg = responseJSON.description || DEFAULT_ERROR_MESSAGE;
             let status = responseJSON.name || DEFAULT_SERVER_ERROR_STATUS;
             if (responseJSON.hasOwnProperty("code")) {
@@ -116,7 +114,7 @@
             this.displayError(msg, status);
         }
 
-        displayUncaughtException(html, textStatus) {
+        Analysis.prototype.displayUncaughtException = function(html, textStatus) {
             const $iframe = $('<iframe></iframe>').appendTo(this.$errorLog);
             let iframe = $iframe.get(0);
             iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument);
@@ -126,15 +124,15 @@
             this.$errorLog.fadeIn(150);
         }
 
-        clearError() {
+        Analysis.prototype.clearError = function() {
             this.$errorLog.empty().hide();
         }
 
-        displayImage(src) {
+        Analysis.prototype.displayImage = function(src) {
             $("<img/>").attr("src", src).appendTo(this.$imageContainer).parent().fadeIn();
         }
 
-        clearImage() {
+        Analysis.prototype.clearImage = function() {
             this.$imageContainer.empty().hide();
         }
     }

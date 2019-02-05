@@ -153,7 +153,7 @@
         var $this = $(this);
         var inputName = $this.attr("name");
         var files = $this.get(0).files;
-        if (files.length == 1) {
+        if (files && files.length == 1) {
             var file = files[0];
             var formData = new FormData();
             formData.append(inputName, file);
@@ -206,6 +206,9 @@
                 }
             });
         }
+
+        // allow same file to trigger change event
+        $this.val(null);
      });
 
      // handle the `Calculate Regression` button
@@ -373,7 +376,8 @@
         $dialog.dialog("open");
     }
 
-    function displayError(str, textStatus = "ERROR") {
+    function displayError(str, textStatus) {
+        textStatus = textStatus || "ERROR";
         var $dialog = createErrorDialog();
         $dialog.html("<p>"+str+"</p>");
         $dialog.dialog("option", "title", '<span class="ui-icon ui-icon-alert"></span><span>'+textStatus+'</span>');
