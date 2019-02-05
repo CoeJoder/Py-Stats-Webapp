@@ -135,8 +135,8 @@ def submit_zdist_analysis():
         time, data = ski_stats.parse_workbook(open_workbook(file_contents=file_stream.read()))
         user_threshold_raw = request.form["user_threshold"]
         user_threshold = fast_real(user_threshold_raw)
-        if not isinstance(user_threshold, (int, long, float)) or not (1 <= user_threshold <= 100):
-            raise BadRequest("Invalid value for \"user_threshold\" ({1}).  Expected value between 1 and 100."
+        if not isinstance(user_threshold, (int, long, float)) or not (5 <= user_threshold <= 95):
+            raise BadRequest("Invalid value for \"user_threshold\" ({1}).  Expected value between 5 and 95."
                              .format(user_threshold_raw))
 
         # run the zdist calculation
