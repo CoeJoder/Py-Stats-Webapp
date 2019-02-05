@@ -23,26 +23,26 @@ su - $USER
 
 # Installation
 cd /var/www
-git clone https://github.com/CoeJoder/Nonlinear-Least-Squares.git
-cd Nonlinear-Least-Squares
+git clone https://github.com/CoeJoder/Py-Stats-Webapp.git
+cd Py-Stats-Webapp
 virtualenv venv
 ./venv/bin/pip install -r requirements.txt
-sudo ln -s /var/www/Nonlinear-Least-Squares/nonlinear-least-squares.service /etc/systemd/system/nonlinear-least-squares.service
+sudo ln -s /var/www/Py-Stats-Webapp/py-stats-webapp.service /etc/systemd/system/py-stats-webapp.service
 sudo systemctl daemon-reload
 ```
 ## Management 
 ```shell
 # Startup
-sudo systemctl start nonlinear-least-squares.service
+sudo systemctl start py-stats-webapp.service
 
 # Shutdown
-sudo systemctl stop nonlinear-least-squares.service
+sudo systemctl stop py-stats-webapp.service
 
 # Restart
-sudo systemctl restart nonlinear-least-squares.service
+sudo systemctl restart py-stats-webapp.service
 
 # Check status
-sudo systemctl status nonlinear-least-squares.service
+sudo systemctl status py-stats-webapp.service
 ```
 
 ## Authors

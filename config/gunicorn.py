@@ -122,7 +122,7 @@ spew = False
 
 daemon = False
 raw_env = []
-pidfile = '/run/gunicorn/nonlinear-least-squares.pid'
+pidfile = '/run/gunicorn/py-stats-webapp.pid'
 umask = 0
 user = None
 group = None
