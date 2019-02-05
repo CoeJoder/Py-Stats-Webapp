@@ -1,6 +1,5 @@
-# Ski Slope Least-Squares
-A simple website interface for a SciPy least-squares curve-fitting function.
-Written in Python, using the Flask framework.
+# Py Stats Webapp
+Framework for generating a single-page application from a collection of data analysis scripts.  Uses Python 2.7 and Flask.
 
 ![Sample image](/sample_output.png "Sample output")
 
