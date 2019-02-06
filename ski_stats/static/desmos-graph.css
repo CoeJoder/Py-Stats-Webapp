@@ -1,0 +1,137 @@
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#calculator {
+  width: 100%;
+  height: 100%;
+}
+
+#calculate_button_row {
+    display: none;
+    float: right;
+    white-space: nowrap;
+}
+
+#calculate_button_row .dcg-btn {
+    background-image: linear-gradient(#EEEEEE, #DDDDDD);
+    line-height: 30px;
+}
+
+#calculate_button_row .dcg-btn.dcg-hovered
+ , #calculate_button_row .dcg-btn.panel-opened {
+    background: rgb(200, 200, 200);
+}
+
+#calculate_button_row .dcg-btn.dcg-depressed {
+    background: rgb(180, 180, 180);
+}
+
+#upload_button_row {
+    display: none;
+    text-align: center;
+}
+
+#upload_button_row .dcg-btn {
+    padding: 10px 20px;
+}
+
+#upload_spinner_container > img {
+    display: none;
+    height: 50px;
+    margin: 1em auto;
+}
+
+#regression_options {
+    display: none;
+    top: 8px;
+    right: -299px;
+    margin: 0px 0px 0px 10px;
+}
+
+#regression_options .dcg-arrow {
+    left: -11px;
+}
+
+#regression_options .dcg-checkbox-title {
+    height: auto;
+}
+
+#regression_options .dcg-checkbox-title input {
+    float: none;
+    width: 60%;
+}
+
+#regression_options .param-bounds {
+    white-space: nowrap;
+}
+
+#regression_options .param-bounds input {
+    width: 85px;
+}
+
+#max_nfev_container {
+    padding-top: 5px;
+}
+
+#run_button_container {
+    white-space: nowrap;
+    margin: 10px 7px 0px 0px;
+}
+
+#run_button {
+    display: inline-block;
+    line-height: 2em;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+#run_button_container > img {
+    display: none;
+    width: 30px;
+    vertical-align: middle;
+}
+
+#error_dialog_container .ui-dialog.dcg-popover-interior {
+    padding: .2em;
+}
+
+#error_dialog {
+    display: none;
+}
+
+.ui-dialog-title .ui-icon {
+    margin-right: 3px;
+}
+
+#error_dialog iframe {
+    border: none;
+    width: 100%;
+    height: 100%;
+}
+
+/* overrides of native Desmos styles */
+
+.dcg-action-toggle-edit
+    , .dcg-hasRegression .dcg-top-level-delete
+    , .dcg-expressionitem[expr-id=h] .dcg-top-level-delete
+    , .dcg-expressionitem[expr-id=b] .dcg-top-level-delete
+    , .dcg-expressionitem[expr-id=v] .dcg-top-level-delete
+    , .dcg-expressionitem[expr-id=p] .dcg-top-level-delete {
+    display: none !important;
+}
+
+.dcg-expressiontable .dcg-top-level-delete {
+    display: block !important;
+}
+
+.dcg-regression-container .dcg-statistics
+ , .dcg-regression-container .dcg-residuals
+ , .dcg-regression-container .dcg-parameters-container .dcg-parameter {
+    width: 150px !important;
+}

@@ -1,15 +1,14 @@
-from flask import Flask, request, render_template, jsonify, send_file
+from flask import request, render_template, jsonify, send_file
 from werkzeug.exceptions import BadRequest, InternalServerError, HTTPException
 from xlrd import open_workbook
 import numpy as np
 from fastnumbers import fast_real
-import ski_slope_least_squares_3_oct as lsq
-import z_dist_fit_10_nov as zdist
-import ski_stats
+from ski_stats.scripts import z_dist_fit_10_nov as zdist
+from ski_stats.scripts import ski_slope_least_squares_3_oct as lsq
+from ski_stats import app
+from ski_stats.scripts import parse_workbook
 
 EXCEL_EXTENSIONS = {'xlsx', 'xls'}
-
-app = Flask(__name__)
 
 
 def is_spreadsheet(filename):
@@ -71,7 +70,7 @@ def desmos_graph():
 def parse_uploaded_spreadsheet():
     # spreadsheet submitted for parsing only
     file_stream = get_uploaded_spreadsheet()
-    time, data = ski_stats.parse_workbook(open_workbook(file_contents=file_stream.read()), use_arrays=False)
+    time, data = parse_workbook(open_workbook(file_contents=file_stream.read()), use_arrays=False)
     return jsonify(x=time, y=data)
 
 
@@ -132,7 +131,7 @@ def submit_zdist_analysis():
     file_stream = get_uploaded_spreadsheet()
     try:
         # parse the uploaded spreadsheet
-        time, data = ski_stats.parse_workbook(open_workbook(file_contents=file_stream.read()))
+        time, data = parse_workbook(open_workbook(file_contents=file_stream.read()))
         user_threshold_raw = request.form["user_threshold"]
         user_threshold = fast_real(user_threshold_raw)
         if not isinstance(user_threshold, (int, long, float)) or not (5 <= user_threshold <= 95):
@@ -159,7 +158,7 @@ def submit_lsq_analysis():
     file_stream = get_uploaded_spreadsheet()
     try:
         # parse the uploaded spreadsheet
-        time, data = ski_stats.parse_workbook(open_workbook(file_contents=file_stream.read()))
+        time, data = parse_workbook(open_workbook(file_contents=file_stream.read()))
 
         # parse the form inputs
         h = get_numpy_val_from_form_input("h")
