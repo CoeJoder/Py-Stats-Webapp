@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ski Stats (Desmos)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='desmos-graph.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon-32x32.png') }}" sizes="32x32" />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon-16x16.png') }}" sizes="16x16" />
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script
+            src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"
+            integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E="
+            crossorigin="anonymous"></script>
+    <script src="https://www.desmos.com/api/v1.2/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+    <script src="{{ url_for('static', filename='desmos-initial-state.js') }}"></script>
+</head>
+<body>
+    <div id="calculator"></div>
+
+    <!-- the elements below will be moved into place and made visible after Desmos calculator loads -->
+
+    <div id="upload_button_row" class="dcg-expressionitem">
+        <div style="width: 100%; margin: 1em;"><!-- just spacing --></div>
+        <label for="upload_button">
+            <div class="dcg-btn dcg-btn-light-gray dcg-visible" aria-hidden="false" role="button" ontap="" tabindex="1">
+                Import Spreadsheet
+            </div>
+            <input id="upload_button" type="file" name="spreadsheet" style="display: none;"/>
+        </label>
+        <div id="upload_spinner_container">
+            <img class="spinner" src="{{ url_for('static', filename='spinner.gif') }}" />
+        </div>
+        <div style="width: 100%; margin: 1em;"><!-- just spacing --></div>
+    </div>
+
+    <div id="calculate_button_row" class="dcg-expressionitem">
+        <div id="calculate_button" class="dcg-btn dcg-btn-light-gray dcg-visible" aria-hidden="false" role="button" ontap="" tabindex="1">
+            Calculate Regression
+        </div>
+    </div>
+
+    <div id="regression_options" class="dcg-settings-container dcg-left dcg-popover dcg-constrained-height-popover" style="bottom: 0">
+        <div class="dcg-popover-interior" role="complementary" aria-label="Regression Settings">
+            <div class="dcg-arrow"></div>
+            <div class="dcg-checkbox-title">
+                <div class="dcg-component-checkbox dcg-checked dcg-green" ontap="">
+                    <span tabindex="0" class="dcg-checkbox" role="checkbox" aria-label="use param bounds" aria-checked="true">
+                        <i class="dcg-icon-check" aria-hidden="true"></i>
+                    </span>
+                    <span class="dcg-checkbox-children">Specify parameter bounds</span>
+                </div>
+            </div>
+            <div id="param-bounds-container">
+            {% for param in ["h", "b", "v", "p"] %}
+                <div class="dcg-checkbox-title param-bounds">
+                    <!-- PARAM BOUNDARY INEQUALITY -->
+                    <input id="{{param}}_lower" class="dcg-axis-label" placeholder="-inf or num" aria-label="lower bound" value="-inf"/>
+                    <span class="dcg-interval-interior dcg-mq-math-mode dcg-static-mathquill-view" aria-label="less than or equal to &quot;{{param}}&quot; less than or equal to">
+                        <span aria-hidden="true" class="dcg-mq-selectable">$$</span>
+                        <span class="dcg-mq-root-block">
+                            <span class="dcg-mq-binary-operator" aria-hidden="true">≤</span>
+                            <var aria-hidden="true">{{param}}</var>
+                            <span class="dcg-mq-binary-operator" aria-hidden="true">≤</span>
+                        </span>
+                    </span>
+                    <input id="{{param}}_upper" class="dcg-axis-label" placeholder="inf or num" aria-label="upper bound" value="inf"/>
+                </div>
+            {% endfor %}
+            </div>
+            <div class="dcg-section-divider" aria-hidden="true"></div>
+            <div id="max_nfev_container" class="dcg-checkbox-title">
+                <span>Max number of function evaluations</span>
+                <input id="max_nfev" class="dcg-axis-label" placeholder="enter an integer value" aria-label="enter NFEV" value="1000000"/>
+            </div>
+            <div class="dcg-section-divider" aria-hidden="true"></div>
+            <div id="run_button_container">
+                <div id="run_button" role="button" tabindex="0" class="dcg-btn-light-gray" ontap="">Run</div>
+                <img class="spinner" src="{{ url_for('static', filename='spinner.gif') }}" />
+            </div>
+        </div>
+    </div>
+
+    <div id="error_dialog_container" class="ui-corner-all dcg-popover"></div>
+    <div id="error_dialog"></div>
+
+    <!-- placed at end of body for faster loading -->
+    <script src="{{ url_for('static', filename='desmos-graph.js') }}"></script>
+</body>
+</html>

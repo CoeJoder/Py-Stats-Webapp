@@ -1,16 +1,16 @@
 # Systemd unit file for managing the app's lifecycle
 [Unit]
-Description = Py Stats Webapp
+Description = Ski Stats Webapp
 After = network.target
 
 [Service]
 PermissionsStartOnly = true
-PIDFile = /run/gunicorn/py-stats-webapp.pid
+PIDFile = /run/gunicorn/ski-stats-webapp.pid
 User = www-data
 Group = www-data
 RuntimeDirectory = gunicorn
-WorkingDirectory = /var/www/Py-Stats-Webapp
-ExecStart = /var/www/Py-Stats-Webapp/venv/bin/gunicorn -c ./config/gunicorn.py app:app
+WorkingDirectory = /var/www/Ski-Stats-Webapp
+ExecStart = /var/www/Ski-Stats-Webapp/venv/bin/gunicorn -c ./config/gunicorn.py ski_stats:app
 ExecReload = /bin/kill -s HUP $MAINPID
 ExecStop = /bin/kill -s TERM $MAINPID
 PrivateTmp = true
