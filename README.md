@@ -36,9 +36,9 @@ def get_html_form():
             ParamBoundsInput(param="h", size=5, default_min="-inf", default_max="inf"),
             ParamBoundsInput(param="b", size=5, default_min="-inf", default_max="inf"),
             ParamBoundsInput(param="v", size=5, default_min="-inf", default_max="inf"),
-            ParamBoundsInput(param="p", size=5, default_min="-inf", default_max="inf")
+            ParamBoundsInput(param="p", size=5, default_min="-inf", default_max="inf"),
         ])
-        do_curve_fit = RunButton(button_text="Do curve fit")
+        do_curve_fit = RunButton(label="", button_text="Do curve fit")
         
     return HtmlForm()
 
