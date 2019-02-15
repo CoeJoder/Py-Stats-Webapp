@@ -1,7 +1,7 @@
 # Ski Stats Webapp
-A web framework for generating single-page applications from a collection of data analysis scripts.
+A web framework for generating single-page applications from a collection of data analysis scripts.  
 Analysis scripts should be added to the `ski_stats.scripts` package and should
-implement `get_html_form() : form` and `html_form_submitted(form) : image`.
+implement `get_html_form() : form` and `html_form_submitted(form) : image`.  
 
 Uses: Python 2.7, NumPy, SciPy, Flask, WTForms.
 
@@ -14,7 +14,8 @@ Uses: Python 2.7, NumPy, SciPy, Flask, WTForms.
 from flask_wtf import FlaskForm
 from io import BytesIO
 from ski_stats.forms.fields import (
-    Title, BrowseSpreadsheetInput, MathEquation, ParamGroup, ParamInput, ParamBoundsGroup, ParamBoundsInput, RunButton
+    Title, BrowseSpreadsheetInput, MathEquation, RunButton, 
+    ParamGroup, ParamInput, ParamBoundsGroup, ParamBoundsInput
 )
 
 def get_html_form():
@@ -23,7 +24,8 @@ def get_html_form():
     class HtmlForm(FlaskForm):
         title = Title("Non-Linear Curve Fitting")
         spreadsheet = BrowseSpreadsheetInput(label="Select measurement data")
-        equation = MathEquation(label="", latex=r"y_1\sim h\cdot\cos\left(\frac{2\left(x_1+v\right)\pi}{p}\right)+b")
+        equation = MathEquation(label="Curve equation", 
+                                latex=r"y_1\sim h\cdot\cos\left(\frac{2\left(x_1+v\right)\pi}{p}\right)+b")
         initial_params = ParamGroup(label="Initial params guess", fields=[
             ParamInput(param="h", size=5, default=700),
             ParamInput(param="b", size=5, default=200),
