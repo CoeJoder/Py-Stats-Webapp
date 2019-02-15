@@ -7,11 +7,13 @@ from matplotlib import rcParams
 from io import BytesIO
 from PIL import Image
 from xlrd import open_workbook
-from ski_stats.scripts import pearson, peak_auc, midpoint_peak_auc, parse_workbook, CalcResults, CurveFitException
+from ski_stats.common import pearson, peak_auc, midpoint_peak_auc, parse_workbook, CalcResults, CurveFitException
+from flask_wtf import FlaskForm
+from ski_stats.forms.fields import Title, BrowseSpreadsheetInput, RunButton, NumberInput, MathEquation, ParamInput, ParamBoundsInput, ParamGroup, ParamBoundsGroup
 
 DEFAULT_INITIAL_PARAMS_GUESS = (700, 200, 0, 24)
 DEFAULT_BOUNDS = ([-np.inf, -np.inf, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf])
-DEFAULT_MAX_NFEV = 1000000000
+DEFAULT_MAX_NFEV = 10000000
 
 
 def cos_fit(params, x):
@@ -302,6 +304,43 @@ def generate_plot_image(time, data, results, include_text=True):
     fig.savefig(buf, format="png")
     buf.seek(0)
     return buf
+
+
+def get_html_form():
+    """The web form fields."""
+    class HtmlForm(FlaskForm):
+        title = Title("Least Squares Curve Fit", show_desmos_link=True)
+        spreadsheet = BrowseSpreadsheetInput(label="Select measurement data")
+        curve_equation = MathEquation(label="", latex=r"y_1\sim h\cdot\cos\left(\frac{2\left(x_1+v\right)\pi}{p}\right)+b")
+        # curve_equation = MathEquation(label="", latex=r"y = h \cdot \cos \left({{2(x + v)\pi \over p }}\right) + b")
+        initial_params = ParamGroup(label="Initial guess for params", fields=[
+            ParamInput(param="h", size=5, default=DEFAULT_INITIAL_PARAMS_GUESS[0]),
+            ParamInput(param="b", size=5, default=DEFAULT_INITIAL_PARAMS_GUESS[1]),
+            ParamInput(param="v", size=5, default=DEFAULT_INITIAL_PARAMS_GUESS[2]),
+            ParamInput(param="p", size=5, default=DEFAULT_INITIAL_PARAMS_GUESS[3]),
+        ])
+        param_bounds = ParamBoundsGroup(label="Param bounds", fields=[
+            ParamBoundsInput(param="h", size=5, default_min=DEFAULT_BOUNDS[0][0], default_max=DEFAULT_BOUNDS[1][0]),
+            ParamBoundsInput(param="b", size=5, default_min=DEFAULT_BOUNDS[0][1], default_max=DEFAULT_BOUNDS[1][1]),
+            ParamBoundsInput(param="v", size=5, default_min=DEFAULT_BOUNDS[0][2], default_max=DEFAULT_BOUNDS[1][2]),
+            ParamBoundsInput(param="p", size=5, default_min=DEFAULT_BOUNDS[0][3], default_max=DEFAULT_BOUNDS[1][3])
+        ])
+        max_nfev = NumberInput(label="Maximum number of function evaluations", default=DEFAULT_MAX_NFEV, min=1, max=DEFAULT_MAX_NFEV)
+        do_curve_fit = RunButton(label="", button_text="Do curve fit")
+    return HtmlForm()
+
+
+def html_form_submitted(form):
+    """Handler for web form submission."""
+    # get the form field data
+    time, data = form.spreadsheet.parse()
+    initial_params = form.initial_params.as_list("h", "b", "v", "p")
+    bounds = form.param_bounds.as_minmax_pair("h", "b", "v", "p")
+    max_nfev = form.max_nfev.data
+
+    # run the calc and return an image
+    results = do_calculations(time, data, initial_params, bounds, max_nfev)
+    return generate_plot_image(time, data, results)
 
 
 def main():

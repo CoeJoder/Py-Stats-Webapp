@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ski Stats</title>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='ski-slope.css') }}">
+    <link rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/katex.css"
+            integrity="sha384-xNwWFq3SIvM4dq/1RUyWumk8nj/0KFg4TOnNcfzUU4X2gNn3WoRML69gO7waf3xh"
+            crossorigin="anonymous">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon-32x32.png') }}" sizes="32x32" />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon-16x16.png') }}" sizes="16x16" />
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script
+            src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"
+            integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E="
+            crossorigin="anonymous"></script>
+    <script
+            src="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/katex.js"
+            integrity="sha384-UP7zD+aGyuDvxWQEDSRYcvoTxJSD82C6VvuEBktJZGo25CVhDstY9sCDHvyceo9L"
+            crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='ski-slope.js') }}"></script>
+</head>
+<body>
+    <div class="ui-widget" id="main">
+        <div class="field">
+            <div>Select analysis</div>
+            <select name="analysis" id="analysis">
+                {% for analysis in analyses %}
+                <option selected="{{ 'selected' if loop.counter == 1 else '' }}" value="{{ analysis['id'] }}">{{ analysis['name'] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <hr/>
+        {% for analysis in analyses %}
+        <form data-analysis-id="{{ analysis['id'] }}" action="{{ url_for('submit_analysis') }}" method="post" enctype="multipart/form-data" style="display: none;">
+            {% for field in analysis['form'] %}
+            {{ field() }}
+            {% endfor %}
+            <p class="error_log"></p>
+            <div class="image_container"></div>
+            <div class="calc_results_container"></div>
+            <input type="hidden" name="analysis-id" value="{{ analysis['id'] }}"/>
+        </form>
+        {% endfor %}
+    </div>
+    <!-- render immediately -->
+    <script>
+        // initialize module
+        window.SkiStats = (window.SkiStats || {});
+        // contents will be replaced with Analysis instances on document load
+        window.SkiStats.analyses = [{{ ids|safe }}]; // injected by server
+
+        (function($) {
+            // render embedded math equations
+            $(".math-equation").each(function() {
+                katex.render($(this).data("latex"), this, {
+                    throwOnError: false
+                });
+            });
+
+            // initialize analysis selector
+            window.SkiStats.$analysisSelector = jQuery("#analysis").selectmenu({
+                width: "auto",
+                change: function(event, ui) {
+                    const val = $(this).val();
+                    for (let i = 0; i < window.SkiStats.analyses.length; i++) {
+                        let analysis = window.SkiStats.analyses[i];
+                        if (analysis.id == val)
+                            analysis.show();
+                        else
+                            analysis.hide();
+                    }
+                }
+            });
+        })(jQuery);
+    </script>
+</body>
+</html>

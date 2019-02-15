@@ -1,12 +1,11 @@
-from flask import request, render_template, jsonify, send_file
+from flask import request, redirect, render_template, jsonify, send_file
 from werkzeug.exceptions import BadRequest, InternalServerError, HTTPException
 from xlrd import open_workbook
 import numpy as np
 from fastnumbers import fast_real
-from ski_stats.scripts import z_dist_fit_10_nov as zdist
 from ski_stats.scripts import ski_slope_least_squares_3_oct as lsq
-from ski_stats import app
-from ski_stats.scripts import parse_workbook
+from ski_stats import app, analyses
+from ski_stats.common import parse_workbook
 
 EXCEL_EXTENSIONS = {'xlsx', 'xls'}
 
@@ -61,6 +60,34 @@ def handle_exception(error):
     return jsonify(code=500, description=error.message), 500
 
 
+@app.route("/", methods=["GET"])
+def show_analyses():
+    # cache forms so that they're only instantiated once per request
+    analyses_copy = analyses[:]
+    for analysis in analyses_copy:
+        form = analysis["module"].get_html_form()
+        analysis["form"] = form
+    ids = ", ".join("'{}'".format(analysis["id"]) for analysis in analyses_copy)
+    return render_template("analysis-forms.html", analyses=analyses_copy, ids=ids)
+
+
+@app.route("/submitAnalysis", methods=["POST"])
+def submit_analysis():
+    # find which form was submitted by ID lookup
+    id = request.form["analysis-id"]
+    analysis = [analysis for analysis in analyses if str(analysis["id"]) == id]
+    if not analysis:
+        raise BadRequest("Analysis ID not found: " + id)
+    analysis = analysis.pop()
+    module = analysis["module"]
+    form = module.get_html_form()
+    if form.validate():
+        buf = module.html_form_submitted(form)
+        return send_file(buf, mimetype="image/png")
+    else:
+        return jsonify(errors=form.errors), 400
+
+
 @app.route("/desmos")
 def desmos_graph():
     return render_template("desmos-graph.html")
@@ -111,85 +138,6 @@ def desmos_calculate_regression():
         # for now, the Desmos-style page expects just the param solutions
         h, b, v, p = results.lsq_params
         return jsonify(h=h, b=b, v=v, p=p)
-
-    except KeyError as err:
-        print str(err)
-        raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
-
-    except Exception as err:
-        print str(err)
-        raise InternalServerError("[{0}] {1}".format(type(err).__name__, str(err)))
-
-
-@app.route("/", methods=["GET"])
-def start_page():
-    return render_template("ski-slope.html")
-
-
-@app.route("/zdistAnalysis", methods=["POST"])
-def submit_zdist_analysis():
-    file_stream = get_uploaded_spreadsheet()
-    try:
-        # parse the uploaded spreadsheet
-        time, data = parse_workbook(open_workbook(file_contents=file_stream.read()))
-        user_threshold_raw = request.form["user_threshold"]
-        user_threshold = fast_real(user_threshold_raw)
-        if not isinstance(user_threshold, (int, long, float)) or not (5 <= user_threshold <= 95):
-            raise BadRequest("Invalid value for \"user_threshold\" ({1}).  Expected value between 5 and 95."
-                             .format(user_threshold_raw))
-
-        # run the zdist calculation
-        user_threshold = float(user_threshold)
-        results = zdist.do_calculations(time, data, user_threshold)
-        buf = zdist.generate_plot_image(time, data, user_threshold, results)
-        return send_file(buf, mimetype="image/png")
-
-    except KeyError as err:
-        print str(err)
-        raise BadRequest("[KeyError] {0}".format("Request was missing param \"{0}\"".format(err.args[0])))
-
-    except Exception as err:
-        print str(err)
-        raise InternalServerError("[{0}] {1}".format(type(err).__name__, str(err)))
-
-
-@app.route("/lsqAnalysis", methods=["POST"])
-def submit_lsq_analysis():
-    file_stream = get_uploaded_spreadsheet()
-    try:
-        # parse the uploaded spreadsheet
-        time, data = parse_workbook(open_workbook(file_contents=file_stream.read()))
-
-        # parse the form inputs
-        h = get_numpy_val_from_form_input("h")
-        b = get_numpy_val_from_form_input("b")
-        v = get_numpy_val_from_form_input("v")
-        p = get_numpy_val_from_form_input("p")
-        max_nfev = get_numpy_val_from_form_input("max_nfev")
-        include_text = request.form.get("include_text") is not None
-
-        if request.form.get("specify_bounds"):
-            # bounds were specified
-            h_upper = get_numpy_val_from_form_input("h_upper")
-            b_upper = get_numpy_val_from_form_input("b_upper")
-            v_upper = get_numpy_val_from_form_input("v_upper")
-            p_upper = get_numpy_val_from_form_input("p_upper")
-
-            h_lower = get_numpy_val_from_form_input("h_lower")
-            b_lower = get_numpy_val_from_form_input("b_lower")
-            v_lower = get_numpy_val_from_form_input("v_lower")
-            p_lower = get_numpy_val_from_form_input("p_lower")
-            bounds = ([h_lower, b_lower, v_lower, p_lower], [h_upper, b_upper, v_upper, p_upper])
-
-            # run calculation with bounds
-            results = lsq.do_calculations(time=time, data=data, params_guess=(h, b, v, p), bounds=bounds, max_nfev=max_nfev)
-        else:
-            # run calculation without bounds
-            results = lsq.do_calculations(time=time, data=data, params_guess=(h, b, v, p), max_nfev=max_nfev)
-
-        # generate image and send as response
-        buf = lsq.generate_plot_image(time, data, results, include_text)
-        return send_file(buf, mimetype="image/png")
 
     except KeyError as err:
         print str(err)
