@@ -122,7 +122,7 @@ spew = False
 
 daemon = False
 raw_env = []
-pidfile = '/run/gunicorn/py-stats-webapp.pid'
+pidfile = '/run/gunicorn/ski-stats-webapp.pid'
 umask = 0
 user = None
 group = None
