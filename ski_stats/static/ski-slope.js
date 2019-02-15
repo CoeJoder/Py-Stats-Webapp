@@ -1,6 +1,7 @@
 (function($) {
     const DEFAULT_ERROR_MESSAGE = "An unknown exception occurred during processing.";
     const DEFAULT_SERVER_ERROR_STATUS = "SERVER ERROR";
+    const WTFORMS_FIELD_SEPARATOR = "-";
 
     // returns true if string is valid HTML
     function isHtml(str) {
@@ -13,30 +14,23 @@
     // encapsulation of DOM elements representing an analysis
     function Analysis(id) {
         this.id = id
-        this.$header = $("h2[data-analysis-id='"+id+"']");
         this.$form = $("form[data-analysis-id='"+id+"']");
         this.$errorLog = this.$form.find(".error_log");
         this.$imageContainer = this.$form.find(".image_container");
         this.$resultsContainer = this.$form.find(".calc_results_container");
         const that = this;
 
-        // display uploaded filename on selection
-        this.$form.find(".upload_button").change(function() {
-            const fileList = $(this).prop("files");
-            if (fileList && fileList.length > 0) {
-                that.$form.find(".upload_filename").text(fileList[0].name);
-            }
-        });
+        // clear validation errors on change
+        this.$form.find("input").change(function() {
+            that.clearValidationErrors($(this));
+        })
 
-        // toggle the bounds section using a checkbox
-        this.$form.find(".specify_bounds").change(function() {
-            if ($(this).is(":checked")) {
-                that.$form.find(".bounds input").prop("disabled", false);
-                that.$form.find(".bounds_overlay").css("z-index", -1);
-            }
-            else {
-                that.$form.find(".bounds input").prop("disabled", true);
-                that.$form.find(".bounds_overlay").css("z-index", 1);
+        // display uploaded filename on selection
+        this.$form.find(".browse-button input").change(function() {
+            const $this = $(this);
+            const fileList = $this.prop("files");
+            if (fileList && fileList.length > 0) {
+                $this.closest(".browse-button").find(".filename").text(fileList[0].name);
             }
         });
 
@@ -80,7 +74,12 @@
                     console.log(textStatus, errorThrown)
                     const responseText = jqXHR.responseText;
                     if (jqXHR.hasOwnProperty("responseJSON")) {
-                        that.displayCaughtException(jqXHR.responseJSON);
+                        if (jqXHR.responseJSON.hasOwnProperty("errors")) {
+                            that.processValidationErrors(jqXHR.responseJSON.errors);
+                        }
+                        else {
+                            that.displayCaughtException(jqXHR.responseJSON);
+                        }
                     }
                     else if (typeof responseText != "undefined") {
                         if (isHtml(responseText)) {
@@ -104,18 +103,80 @@
         });
 
         Analysis.prototype.show = function() {
-            this.$header.show();
             this.$form.show();
         }
 
         Analysis.prototype.hide = function() {
-            this.$header.hide();
             this.$form.hide();
+        }
+
+        Analysis.prototype.processValidationErrors = function(errors) {
+            console.log(errors);
+            // errors are in a nested tree structure per the WTForms validator
+            // node keys are joined with a separator to form field names
+            // leaf nodes are arrays of errors strings
+            const that = this;
+            _processValidationErrors(errors, []);
+
+            // recursive function is OK since widget model is very shallow
+            function _processValidationErrors(curObj, keyStack) {
+                if (Array.isArray(curObj)) {
+                    that.displayValidationError(keyStack.join(WTFORMS_FIELD_SEPARATOR), curObj.pop());
+                }
+                else {
+                    for (key in curObj) {
+                        keyStack.push(key);
+                        _processValidationErrors(curObj[key], keyStack);
+                    }
+                }
+                keyStack.pop();
+            }
+        }
+
+        Analysis.prototype.displayValidationError = function(fieldName, errorMessage) {
+            // DOM input names are in `name` attributes, widget names are in `data-field-name` attributes
+            // if browse button, set the error message in-line.
+            // if any other widget, set input elements to error state, labels to error text, and append to error log.
+            // if input element, set the error state and append to error log.
+            let $input = this.$form.find("input[name='"+fieldName+"']");
+            let $widget = this.$form.find("[data-field-name='"+fieldName+"']");
+            let $browseButton = $input.closest(".browse-button");
+            if ($browseButton.length > 0) {
+                $browseButton.find(".error-message").text(errorMessage).show();
+            }
+            else {
+                if ($widget.length > 0) {
+                    $widget.addClass("ui-state-error-text").find("input").addClass("ui-state-error");
+                }
+                else {
+                    $input.addClass("ui-state-error");
+                }
+                this.displayError(errorMessage);
+            }
+        }
+
+        /**
+         * $elm - input or widget.  Exclude to clear all validation errors.
+         */
+        Analysis.prototype.clearValidationErrors = function($elm) {
+            if (typeof $elm == "undefined") {
+                clear(this.$form.find("input"), this.$form.find("[data-field-name]"), this.$form.find(".browse-button"));
+            }
+            else {
+                clear($elm.closest("input"), $elm.closest("[data-field-name]"), $elm.closest(".browse-button"));
+            }
+            this.clearError();
+
+            function clear($input, $widget, $browse) {
+                $input.removeClass("ui-state-error");
+                $widget.removeClass("ui-state-error-text").find("input").removeClass("ui-state-error");
+                $browse.find(".error-message").text("").hide();
+            }
         }
 
         Analysis.prototype.displayError = function(str, textStatus) {
             textStatus = textStatus || "ERROR";
-            this.$errorLog.append("<span style='padding-right: 10px;'>[" + textStatus +"]</span> " + str).fadeIn(150);
+            this.$errorLog.append("<div><span style='padding-right: 10px;'>[" + textStatus +"]</span> " + str + "</div>").fadeIn(150);
         }
 
         Analysis.prototype.displayCaughtException = function(responseJSON) {
@@ -154,13 +215,13 @@
     $(function() {
         // replace Analysis ids with instances
         const instances = [];
-        for (let i = 0; i < window.SkiSlope.analyses.length; i++) {
-            let id = window.SkiSlope.analyses[i];
+        for (let i = 0; i < window.SkiStats.analyses.length; i++) {
+            let id = window.SkiStats.analyses[i];
             instances.push(new Analysis(id));
         }
-        window.SkiSlope.analyses = instances;
+        window.SkiStats.analyses = instances;
 
         // show current analysis
-        window.SkiSlope.$analysisSelector.selectmenu("option", "change").bind(window.SkiSlope.$analysisSelector)();
+        window.SkiStats.$analysisSelector.selectmenu("option", "change").bind(window.SkiStats.$analysisSelector)();
     });
 })(jQuery);

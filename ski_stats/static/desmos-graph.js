@@ -14,12 +14,12 @@
     var DEFAULT_SERVER_ERROR_STATUS = "SERVER ERROR";
     var DEFAULT_ERROR_STATUS = "ERROR";
 
-    if (typeof window.SkiSlope == "undefined") {
+    if (typeof window.SkiStats == "undefined") {
         alert("Module was not initialized (desmos-initial-state.js).");
         return;
     }
     var calculator = Desmos.GraphingCalculator(document.getElementById("calculator"), {border: false});
-    window.SkiSlope.calculator = calculator;
+    window.SkiStats.calculator = calculator;
 
     // scales the graph according to the imported measurements
     function scaleGraph(x, y) {
@@ -35,7 +35,7 @@
     // populates the expression list
     function initializeExpressions() {
         // restore a previously saved state
-        calculator.setState(SkiSlope.initialGraphState);
+        calculator.setState(SkiStats.initialGraphState);
 
         var params = {};
 

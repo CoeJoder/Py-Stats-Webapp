@@ -1,8 +1,8 @@
 // initialize module
-window.SkiSlope = (window.SkiSlope || {});
+window.SkiStats = (window.SkiStats || {});
 
 // exported from `calculator.getState()`
-window.SkiSlope.initialGraphState = {
+window.SkiStats.initialGraphState = {
   "version": 7,
   "graph": {
     "squareAxes": false,
