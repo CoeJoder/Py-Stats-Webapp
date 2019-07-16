@@ -43,7 +43,7 @@ class NumberInput(DecimalField):
     """Numeric input."""
     widget = widgets.TopLevelWrapper(widgets.NumberInputWidget())
 
-    def __init__(self, label="Enter a number", validators=None, required=True, default=None, size=None, is_subfield=False, min=None, max=None, **kwargs):
+    def __init__(self, label="Enter a number", validators=None, required=True, default=None, size=None, is_subfield=False, min=None, max=None, step="any", **kwargs):
         validators = validators or []
         if required:
             validators.append(CorrectDataRequired())
@@ -53,6 +53,7 @@ class NumberInput(DecimalField):
         # append bounds to label and as input attributes
         render_kw = kwargs.setdefault("render_kw", {})
         render_kw["required"] = required
+        render_kw["step"] = step
         bounds = ""
         if min is not None and max is not None:
             bounds = " ({0}-{1})".format(min, max)
