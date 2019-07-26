@@ -1,5 +1,5 @@
 # Ski Stats Webapp
-A web framework for generating single-page applications from a collection of data analysis scripts.  
+A web framework for generating single-page applications from a collection of image-generating math scripts.  
 Analysis scripts should be added to the `ski_stats.scripts` package and should
 implement `get_html_form() : form` and `html_form_submitted(form) : image`.  
 
