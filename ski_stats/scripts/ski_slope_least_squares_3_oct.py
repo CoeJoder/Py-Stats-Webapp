@@ -29,9 +29,10 @@ def cos_fit(params, x):
 
 def residuals(params, x, y):
     """Residuals computation.  The parameters are arranged in the way required by SciPy.
-    params -- [h, b, v, p]
-    x      -- time array
-    y      -- data array
+
+    `params`:     [h, b, v, p]
+    `x`:          time array
+    `y`:          data array
     """
     return cos_fit(params, x) - y
 
