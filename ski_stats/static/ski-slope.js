@@ -13,7 +13,7 @@
 
     // encapsulation of DOM elements representing an analysis
     function Analysis(id) {
-        this.id = id
+        this.id = id;
         this.$form = $("form[data-analysis-id='"+id+"']");
         this.$errorLog = this.$form.find(".error_log");
         this.$imageContainer = this.$form.find(".image_container");
@@ -23,7 +23,7 @@
         // clear validation errors on change
         this.$form.find("input").change(function() {
             that.clearValidationErrors($(this));
-        })
+        });
 
         // display uploaded filename on selection
         this.$form.find(".browse-button input").change(function() {
@@ -55,7 +55,7 @@
                                 xhr.responseType = "blob";
                             }
                         }
-                    }
+                    };
                     return xhr;
                 },
                 success: function(response, textStatus, jqXHR) {
@@ -104,11 +104,11 @@
 
         Analysis.prototype.show = function() {
             this.$form.show();
-        }
+        };
 
         Analysis.prototype.hide = function() {
             this.$form.hide();
-        }
+        };
 
         Analysis.prototype.processValidationErrors = function(errors) {
             console.log(errors);
@@ -131,7 +131,7 @@
                 }
                 keyStack.pop();
             }
-        }
+        };
 
         Analysis.prototype.displayValidationError = function(fieldName, errorMessage) {
             // DOM input names are in `name` attributes, widget names are in `data-field-name` attributes
@@ -153,7 +153,7 @@
                 }
                 this.displayError(errorMessage);
             }
-        }
+        };
 
         /**
          * $elm - input or widget.  Exclude to clear all validation errors.
@@ -172,12 +172,12 @@
                 $widget.removeClass("ui-state-error-text").find("input").removeClass("ui-state-error");
                 $browse.find(".error-message").text("").hide();
             }
-        }
+        };
 
         Analysis.prototype.displayError = function(str, textStatus) {
             textStatus = textStatus || "ERROR";
             this.$errorLog.append("<div><span style='padding-right: 10px;'>[" + textStatus +"]</span> " + str + "</div>").fadeIn(150);
-        }
+        };
 
         Analysis.prototype.displayCaughtException = function(responseJSON) {
             const msg = responseJSON.description || DEFAULT_ERROR_MESSAGE;
@@ -186,7 +186,7 @@
                 status += " ("+responseJSON.code+")";
             }
             this.displayError(msg, status);
-        }
+        };
 
         Analysis.prototype.displayUncaughtException = function(html, textStatus) {
             const $iframe = $('<iframe></iframe>').appendTo(this.$errorLog);
@@ -196,19 +196,19 @@
             iframe.document.write(html);
             iframe.document.close();
             this.$errorLog.fadeIn(150);
-        }
+        };
 
         Analysis.prototype.clearError = function() {
             this.$errorLog.empty().hide();
-        }
+        };
 
         Analysis.prototype.displayImage = function(src) {
             $("<img/>").attr("src", src).appendTo(this.$imageContainer).parent().fadeIn();
-        }
+        };
 
         Analysis.prototype.clearImage = function() {
             this.$imageContainer.empty().hide();
-        }
+        };
     }
 
     // on document load
