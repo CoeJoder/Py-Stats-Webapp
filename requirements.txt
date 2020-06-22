@@ -3,7 +3,7 @@ backports-abc==0.5
 backports.functools-lru-cache==1.5
 backports.shutil-get-terminal-size==1.0.0
 backports.shutil-which==3.5.2
-bleach==3.1.0
+bleach==3.1.5
 certifi==2018.11.29
 chardet==3.0.4
 charts==0.4.6
@@ -47,11 +47,12 @@ nbconvert==5.4.0
 nbformat==4.4.0
 notebook==5.7.8
 numpy==1.15.4
+packaging==20.4
 pandas==0.24.0
 pandocfilters==1.4.2
 pathlib2==2.3.3
 pickleshare==0.7.5
-Pillow==5.4.1
+Pillow==6.2.2
 plotly==3.5.0
 ply==3.11
 prometheus-client==0.5.0
@@ -80,7 +81,7 @@ traitlets==4.3.2
 urllib3==1.25.3
 wcwidth==0.1.7
 webencodings==0.5.1
-Werkzeug==0.14.1
+Werkzeug==0.15.3
 widgetsnbextension==3.4.2
 win-unicode-console==0.5
 WTForms==2.2.1
