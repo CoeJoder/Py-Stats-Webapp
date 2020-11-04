@@ -98,7 +98,3 @@ sudo systemctl restart ski-stats-webapp.service
 # Check status
 sudo systemctl status ski-stats-webapp.service
 ```
-
-## Authors
-Evan Raiewski  
-Joe Nasca
