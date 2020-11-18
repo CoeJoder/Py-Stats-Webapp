@@ -45,7 +45,7 @@ modernize==0.6.1
 mpmath==1.1.0
 nbconvert==5.4.0
 nbformat==4.4.0
-notebook==5.7.8
+notebook==6.1.5
 numpy==1.15.4
 packaging==20.4
 pandas==0.24.0
